@@ -1,0 +1,266 @@
+{% extends "layouts/user.html.twig" %}
+
+{% block title %}Cron Jobs - VirPanel{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-800">Cron Jobs</h1>
+        <p class="text-gray-600 mt-2">Schedule automated tasks to run at specified times</p>
+    </div>
+
+    <!-- Success/Error Messages -->
+    {% if session_has('success') %}
+    <div class="bg-green-50 border-l-4 border-green-400 p-4 mb-6">
+        <p class="text-green-700">{{ session_get('success') }}</p>
+    </div>
+    {% endif %}
+
+    {% if session_has('error') %}
+    <div class="bg-red-50 border-l-4 border-red-400 p-4 mb-6">
+        <p class="text-red-700">{{ session_get('error') }}</p>
+    </div>
+    {% endif %}
+
+    <!-- Info Box -->
+    <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
+        <div class="flex items-start">
+            <svg class="w-6 h-6 text-blue-500 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <div>
+                <h3 class="text-lg font-semibold text-blue-900 mb-2">About Cron Jobs</h3>
+                <p class="text-blue-800 mb-2">
+                    Cron jobs are scheduled tasks that run automatically at specified times. Use them for regular maintenance, backups, updates, or any repetitive task.
+                </p>
+                <p class="text-blue-700 text-sm">
+                    <strong>Cron Syntax:</strong> minute (0-59) | hour (0-23) | day (1-31) | month (1-12) | weekday (0-6, 0=Sunday)
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Common Templates -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-8" x-data="{ showTemplates: false }">
+        <button @click="showTemplates = !showTemplates" class="flex items-center justify-between w-full text-left">
+            <h2 class="text-xl font-semibold">Common Cron Job Templates</h2>
+            <svg class="w-5 h-5 transition-transform" :class="{'rotate-180': showTemplates}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
+        </button>
+
+        <div x-show="showTemplates" x-transition class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+            {% for template in templates %}
+            <div class="border border-gray-200 rounded-lg p-4 hover:border-blue-500 transition cursor-pointer" onclick="applyTemplate('{{ template.schedule }}')">
+                <div class="flex items-start justify-between">
+                    <div>
+                        <h3 class="font-medium text-gray-900">{{ template.name }}</h3>
+                        <p class="text-sm text-gray-600 mt-1">{{ template.description }}</p>
+                        <code class="text-xs bg-gray-100 px-2 py-1 rounded mt-2 inline-block">{{ template.schedule }}</code>
+                    </div>
+                    <button class="text-blue-600 hover:text-blue-800 text-sm">Use</button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Create Cron Job Form -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-8" x-data="{ useAdvanced: false }">
+        <h2 class="text-xl font-semibold mb-4">Create New Cron Job</h2>
+
+        <form method="POST" action="/user/cron/create" class="space-y-4" id="cronForm">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <!-- Simple/Advanced Toggle -->
+            <div class="flex items-center space-x-4 mb-4">
+                <label class="flex items-center cursor-pointer">
+                    <input type="checkbox" x-model="useAdvanced" class="mr-2">
+                    <span class="text-sm font-medium text-gray-700">Advanced Mode</span>
+                </label>
+            </div>
+
+            <!-- Simple Mode -->
+            <div x-show="!useAdvanced" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Common Settings</label>
+                    <select onchange="applyTemplate(this.value)" class="w-full md:w-1/2 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        <option value="">Select a template...</option>
+                        {% for template in templates %}
+                        <option value="{{ template.schedule }}">{{ template.name }} ({{ template.schedule }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <!-- Advanced Mode -->
+            <div x-show="useAdvanced" class="grid grid-cols-5 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Minute</label>
+                    <input type="text" name="minute" id="minute" value="*" placeholder="*" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    <p class="text-xs text-gray-500 mt-1">0-59</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Hour</label>
+                    <input type="text" name="hour" id="hour" value="*" placeholder="*" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    <p class="text-xs text-gray-500 mt-1">0-23</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Day</label>
+                    <input type="text" name="day" id="day" value="*" placeholder="*" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    <p class="text-xs text-gray-500 mt-1">1-31</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Month</label>
+                    <input type="text" name="month" id="month" value="*" placeholder="*" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    <p class="text-xs text-gray-500 mt-1">1-12</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Weekday</label>
+                    <input type="text" name="weekday" id="weekday" value="*" placeholder="*" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    <p class="text-xs text-gray-500 mt-1">0-6</p>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Command *</label>
+                <input
+                    type="text"
+                    name="command"
+                    required
+                    placeholder="/usr/bin/php /home/{{ account.username }}/script.php"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+                >
+                <p class="text-xs text-gray-500 mt-1">Full path to the command or script to execute</p>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Email Output To (Optional)</label>
+                <input
+                    type="email"
+                    name="email"
+                    placeholder="your@email.com"
+                    class="w-full md:w-1/2 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                >
+                <p class="text-xs text-gray-500 mt-1">Leave blank to disable email notifications</p>
+            </div>
+
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition">
+                Create Cron Job
+            </button>
+        </form>
+    </div>
+
+    <!-- Existing Cron Jobs -->
+    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-xl font-semibold">Your Cron Jobs</h2>
+        </div>
+
+        {% if cron_jobs is empty %}
+        <div class="p-8 text-center text-gray-500">
+            <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <p>No cron jobs created yet</p>
+            <p class="text-sm mt-2">Create a cron job to automate tasks</p>
+        </div>
+        {% else %}
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Schedule</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Command</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for cron in cron_jobs %}
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <code class="text-xs bg-gray-100 px-2 py-1 rounded">{{ cron.schedule }}</code>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="text-sm font-mono text-gray-900 break-all">{{ cron.command }}</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ cron.email ?: '-' }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            {% if cron.status == 'active' %}
+                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Active</span>
+                            {% else %}
+                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ cron.created_at|date('M d, Y') }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <div class="flex space-x-3">
+                                <form method="POST" action="/user/cron/{{ cron.id }}/toggle" class="inline">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="text-indigo-600 hover:text-indigo-900">
+                                        {{ cron.status == 'active' ? 'Disable' : 'Enable' }}
+                                    </button>
+                                </form>
+                                <a href="/user/cron/{{ cron.id }}/logs" class="text-blue-600 hover:text-blue-900">Logs</a>
+                                <form method="POST" action="/user/cron/{{ cron.id }}/delete" class="inline" onsubmit="return confirm('Delete this cron job?')">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="text-red-600 hover:text-red-900">Delete</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Cron Syntax Help -->
+    <div class="mt-8 bg-gray-50 rounded-lg p-6">
+        <h3 class="text-lg font-semibold mb-4">Cron Syntax Help</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div>
+                <h4 class="font-medium text-gray-700 mb-2">Special Characters</h4>
+                <ul class="space-y-1 text-gray-600">
+                    <li><code class="bg-white px-2 py-0.5 rounded">*</code> - Any value</li>
+                    <li><code class="bg-white px-2 py-0.5 rounded">,</code> - List (1,2,3)</li>
+                    <li><code class="bg-white px-2 py-0.5 rounded">-</code> - Range (1-5)</li>
+                    <li><code class="bg-white px-2 py-0.5 rounded">/</code> - Step (*/5)</li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="font-medium text-gray-700 mb-2">Examples</h4>
+                <ul class="space-y-1 text-gray-600">
+                    <li><code class="bg-white px-2 py-0.5 rounded">0 2 * * *</code> - Daily at 2 AM</li>
+                    <li><code class="bg-white px-2 py-0.5 rounded">*/30 * * * *</code> - Every 30 minutes</li>
+                    <li><code class="bg-white px-2 py-0.5 rounded">0 0 1 * *</code> - Monthly on 1st</li>
+                    <li><code class="bg-white px-2 py-0.5 rounded">0 0 * * 0</code> - Weekly on Sunday</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+<script>
+function applyTemplate(schedule) {
+    const parts = schedule.split(' ');
+    if (parts.length === 5) {
+        document.getElementById('minute').value = parts[0];
+        document.getElementById('hour').value = parts[1];
+        document.getElementById('day').value = parts[2];
+        document.getElementById('month').value = parts[3];
+        document.getElementById('weekday').value = parts[4];
+    }
+}
+</script>
+{% endblock %}

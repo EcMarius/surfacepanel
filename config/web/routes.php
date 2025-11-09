@@ -23,6 +23,7 @@ use VirPanel\Core\Http\Controllers\SSLController;
 use VirPanel\Core\Http\Controllers\IPAddressController;
 use VirPanel\Core\Http\Controllers\DNSController;
 use VirPanel\Core\Http\Controllers\FTPController;
+use VirPanel\Core\Http\Controllers\CronController;
 use VirPanel\Core\Http\Middleware\GuestMiddleware;
 use VirPanel\Core\Http\Middleware\AuthenticateMiddleware;
 use VirPanel\Core\Http\Middleware\CsrfMiddleware;
@@ -203,6 +204,14 @@ return function (WebRouter $router) {
     $router->post('/user/ftp/{id}/password', [FTPController::class, 'updatePassword'], [AuthenticateMiddleware::class]);
     $router->post('/user/ftp/{id}/quota', [FTPController::class, 'updateQuota'], [AuthenticateMiddleware::class]);
     $router->post('/user/ftp/{id}/delete', [FTPController::class, 'delete'], [AuthenticateMiddleware::class]);
+
+    // Cron Job Management (User)
+    $router->get('/user/cron', [CronController::class, 'index'], [AuthenticateMiddleware::class]);
+    $router->post('/user/cron/create', [CronController::class, 'store'], [AuthenticateMiddleware::class]);
+    $router->post('/user/cron/{id}/update', [CronController::class, 'update'], [AuthenticateMiddleware::class]);
+    $router->post('/user/cron/{id}/toggle', [CronController::class, 'toggleStatus'], [AuthenticateMiddleware::class]);
+    $router->post('/user/cron/{id}/delete', [CronController::class, 'delete'], [AuthenticateMiddleware::class]);
+    $router->get('/user/cron/{id}/logs', [CronController::class, 'logs'], [AuthenticateMiddleware::class]);
 
     // Redirect root to appropriate dashboard
     $router->get('/', function($request) {
