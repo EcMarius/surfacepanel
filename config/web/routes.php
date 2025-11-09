@@ -17,6 +17,7 @@ use VirPanel\Core\Http\Controllers\ResellerController;
 use VirPanel\Core\Http\Controllers\ModuleController;
 use VirPanel\Core\Http\Controllers\TemplateController;
 use VirPanel\Core\Http\Controllers\DomainController;
+use VirPanel\Core\Http\Controllers\EmailController;
 use VirPanel\Core\Http\Middleware\GuestMiddleware;
 use VirPanel\Core\Http\Middleware\AuthenticateMiddleware;
 use VirPanel\Core\Http\Middleware\CsrfMiddleware;
@@ -118,6 +119,17 @@ return function (WebRouter $router) {
     $router->post('/user/domains/subdomain/{id}/delete', [DomainController::class, 'deleteSubdomain'], [AuthenticateMiddleware::class]);
     $router->post('/user/domains/parked/{id}/delete', [DomainController::class, 'deleteParkedDomain'], [AuthenticateMiddleware::class]);
     $router->post('/user/domains/redirect/{id}/delete', [DomainController::class, 'deleteRedirect'], [AuthenticateMiddleware::class]);
+
+    // Email Management (User)
+    $router->get('/user/email', [EmailController::class, 'index'], [AuthenticateMiddleware::class]);
+    $router->post('/user/email/accounts', [EmailController::class, 'storeAccount'], [AuthenticateMiddleware::class]);
+    $router->post('/user/email/accounts/{id}/password', [EmailController::class, 'updatePassword'], [AuthenticateMiddleware::class]);
+    $router->post('/user/email/accounts/{id}/quota', [EmailController::class, 'updateQuota'], [AuthenticateMiddleware::class]);
+    $router->post('/user/email/accounts/{id}/delete', [EmailController::class, 'deleteAccount'], [AuthenticateMiddleware::class]);
+    $router->post('/user/email/forwarders', [EmailController::class, 'storeForwarder'], [AuthenticateMiddleware::class]);
+    $router->post('/user/email/forwarders/{id}/delete', [EmailController::class, 'deleteForwarder'], [AuthenticateMiddleware::class]);
+    $router->post('/user/email/autoresponders', [EmailController::class, 'storeAutoresponder'], [AuthenticateMiddleware::class]);
+    $router->post('/user/email/autoresponders/{id}/delete', [EmailController::class, 'deleteAutoresponder'], [AuthenticateMiddleware::class]);
 
     // Redirect root to appropriate dashboard
     $router->get('/', function($request) {

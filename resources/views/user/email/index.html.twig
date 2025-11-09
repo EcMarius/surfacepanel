@@ -1,0 +1,381 @@
+{% extends 'layouts/user.html.twig' %}
+
+{% block title %}Email Management{% endblock %}
+
+{% block content %}
+<div class="px-4 sm:px-6 lg:px-8" x-data="{ tab: 'accounts' }">
+    <div class="sm:flex sm:items-center">
+        <div class="sm:flex-auto">
+            <h1 class="text-2xl font-semibold text-gray-900">Email Accounts</h1>
+            <p class="mt-2 text-sm text-gray-700">Manage email accounts, forwarders, and autoresponders</p>
+        </div>
+    </div>
+
+    {% if app.session.get('success') %}
+    <div class="mt-4 rounded-md bg-green-50 p-4">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" />
+                </svg>
+            </div>
+            <div class="ml-3">
+                <p class="text-sm font-medium text-green-800">{{ app.session.get('success') }}</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if app.session.get('error') %}
+    <div class="mt-4 rounded-md bg-red-50 p-4">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" />
+                </svg>
+            </div>
+            <div class="ml-3">
+                <p class="text-sm font-medium text-red-800">{{ app.session.get('error') }}</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Stats -->
+    <div class="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-3">
+        <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
+            <dt class="truncate text-sm font-medium text-gray-500">Email Accounts</dt>
+            <dd class="mt-1 text-3xl font-semibold tracking-tight text-gray-900">{{ emailAccounts | length }}</dd>
+        </div>
+        <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
+            <dt class="truncate text-sm font-medium text-gray-500">Forwarders</dt>
+            <dd class="mt-1 text-3xl font-semibold tracking-tight text-gray-900">{{ forwarders | length }}</dd>
+        </div>
+        <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
+            <dt class="truncate text-sm font-medium text-gray-500">Total Disk Usage</dt>
+            <dd class="mt-1 text-3xl font-semibold tracking-tight text-gray-900">{{ (totalUsage / 1024 / 1024) | round(2) }} MB</dd>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="mt-8">
+        <div class="border-b border-gray-200">
+            <nav class="-mb-px flex space-x-8">
+                <button @click="tab = 'accounts'" :class="tab === 'accounts' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'" class="whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium">
+                    Email Accounts ({{ emailAccounts | length }})
+                </button>
+                <button @click="tab = 'forwarders'" :class="tab === 'forwarders' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'" class="whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium">
+                    Forwarders ({{ forwarders | length }})
+                </button>
+                <button @click="tab = 'autoresponders'" :class="tab === 'autoresponders' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'" class="whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium">
+                    Autoresponders ({{ autoresponders | length }})
+                </button>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Email Accounts Tab -->
+    <div x-show="tab === 'accounts'" class="mt-6">
+        <div class="mb-4">
+            <button @click="$refs.accountForm.classList.toggle('hidden')" class="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500">
+                Create Email Account
+            </button>
+        </div>
+
+        <!-- Create Account Form -->
+        <div ref="accountForm" class="hidden mb-6 bg-white shadow sm:rounded-lg p-6">
+            <h3 class="text-lg font-medium mb-4">Create Email Account</h3>
+            <form action="/user/email/accounts" method="POST">
+                {{ csrf_field() | raw }}
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Username *</label>
+                        <input type="text" name="username" required placeholder="info" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Domain *</label>
+                        <select name="domain" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                            {% for domain in domains %}
+                            <option value="{{ domain }}">@{{ domain }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Password *</label>
+                        <input type="password" name="password" required minlength="8" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                        <p class="mt-1 text-xs text-gray-500">Minimum 8 characters</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Quota (MB)</label>
+                        <input type="number" name="quota" value="0" min="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                        <p class="mt-1 text-xs text-gray-500">0 = Unlimited</p>
+                    </div>
+                </div>
+                <div class="mt-4 flex gap-3">
+                    <button type="submit" class="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500">
+                        Create Account
+                    </button>
+                    <button type="button" @click="$refs.accountForm.classList.add('hidden')" class="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Email Accounts List -->
+        {% if emailAccounts %}
+        <div class="overflow-hidden bg-white shadow sm:rounded-lg">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Quota</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Used</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 bg-white">
+                    {% for account in emailAccounts %}
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ account.email }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {% if account.quota == 0 %}
+                                Unlimited
+                            {% else %}
+                                {{ (account.quota / 1024 / 1024) | round(0) }} MB
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ (account.disk_used / 1024 / 1024) | round(2) }} MB
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <span class="inline-flex rounded-full bg-green-100 px-2 text-xs font-semibold text-green-800">{{ account.status }}</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm space-x-3">
+                            <button onclick="showPasswordModal({{ account.id }})" class="text-blue-600 hover:text-blue-900">Change Password</button>
+                            <form action="/user/email/accounts/{{ account.id }}/delete" method="POST" class="inline" onsubmit="return confirm('Delete this email account and all its messages?');">
+                                {{ csrf_field() | raw }}
+                                <button type="submit" class="text-red-600 hover:text-red-900">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-12 bg-white rounded-lg shadow">
+            <p class="text-sm text-gray-500">No email accounts yet. Create one to get started.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Forwarders Tab -->
+    <div x-show="tab === 'forwarders'" class="mt-6">
+        <div class="mb-4">
+            <button @click="$refs.forwarderForm.classList.toggle('hidden')" class="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500">
+                Create Forwarder
+            </button>
+        </div>
+
+        <!-- Create Forwarder Form -->
+        <div ref="forwarderForm" class="hidden mb-6 bg-white shadow sm:rounded-lg p-6">
+            <h3 class="text-lg font-medium mb-4">Create Email Forwarder</h3>
+            <form action="/user/email/forwarders" method="POST">
+                {{ csrf_field() | raw }}
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Address</label>
+                        <input type="text" name="source" placeholder="info (or leave empty for catch-all)" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                        <p class="mt-1 text-xs text-gray-500">Leave empty for catch-all (@domain)</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Domain *</label>
+                        <select name="domain" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                            {% for domain in domains %}
+                            <option value="{{ domain }}">@{{ domain }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700">Forward To *</label>
+                        <input type="email" name="destination" required placeholder="destination@example.com" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                    </div>
+                </div>
+                <div class="mt-4 flex gap-3">
+                    <button type="submit" class="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500">
+                        Create Forwarder
+                    </button>
+                    <button type="button" @click="$refs.forwarderForm.classList.add('hidden')" class="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Forwarders List -->
+        {% if forwarders %}
+        <div class="overflow-hidden bg-white shadow sm:rounded-lg">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">From</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">To</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 bg-white">
+                    {% for forwarder in forwarders %}
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ forwarder.source }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ forwarder.destination }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <span class="inline-flex rounded-full bg-green-100 px-2 text-xs font-semibold text-green-800">{{ forwarder.status }}</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
+                            <form action="/user/email/forwarders/{{ forwarder.id }}/delete" method="POST" class="inline" onsubmit="return confirm('Delete this forwarder?');">
+                                {{ csrf_field() | raw }}
+                                <button type="submit" class="text-red-600 hover:text-red-900">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-12 bg-white rounded-lg shadow">
+            <p class="text-sm text-gray-500">No forwarders yet. Create one to get started.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Autoresponders Tab -->
+    <div x-show="tab === 'autoresponders'" class="mt-6">
+        <div class="mb-4">
+            <button @click="$refs.autoresponderForm.classList.toggle('hidden')" class="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500">
+                Create Autoresponder
+            </button>
+        </div>
+
+        <!-- Create Autoresponder Form -->
+        <div ref="autoresponderForm" class="hidden mb-6 bg-white shadow sm:rounded-lg p-6">
+            <h3 class="text-lg font-medium mb-4">Create Autoresponder</h3>
+            <form action="/user/email/autoresponders" method="POST">
+                {{ csrf_field() | raw }}
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Email Account *</label>
+                        <select name="email" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                            {% for account in emailAccounts %}
+                            <option value="{{ account.email }}">{{ account.email }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Subject *</label>
+                        <input type="text" name="subject" required placeholder="Out of Office" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Message *</label>
+                        <textarea name="body" required rows="5" placeholder="I am currently out of the office..." class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"></textarea>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Start Date (optional)</label>
+                            <input type="date" name="start_date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">End Date (optional)</label>
+                            <input type="date" name="end_date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-4 flex gap-3">
+                    <button type="submit" class="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500">
+                        Create Autoresponder
+                    </button>
+                    <button type="button" @click="$refs.autoresponderForm.classList.add('hidden')" class="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Autoresponders List -->
+        {% if autoresponders %}
+        <div class="overflow-hidden bg-white shadow sm:rounded-lg">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Subject</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Duration</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 bg-white">
+                    {% for responder in autoresponders %}
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ responder.email }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-500">{{ responder.subject }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {% if responder.start_date and responder.end_date %}
+                                {{ responder.start_date | date('M d') }} - {{ responder.end_date | date('M d') }}
+                            {% else %}
+                                Indefinite
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <span class="inline-flex rounded-full bg-green-100 px-2 text-xs font-semibold text-green-800">{{ responder.status }}</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
+                            <form action="/user/email/autoresponders/{{ responder.id }}/delete" method="POST" class="inline" onsubmit="return confirm('Delete this autoresponder?');">
+                                {{ csrf_field() | raw }}
+                                <button type="submit" class="text-red-600 hover:text-red-900">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-12 bg-white rounded-lg shadow">
+            <p class="text-sm text-gray-500">No autoresponders yet. Create one to get started.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function showPasswordModal(accountId) {
+    const password = prompt('Enter new password (minimum 8 characters):');
+    if (password && password.length >= 8) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/user/email/accounts/${accountId}/password`;
+
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = '_token';
+        csrfInput.value = '{{ csrf_token() }}';
+
+        const passwordInput = document.createElement('input');
+        passwordInput.type = 'hidden';
+        passwordInput.name = 'password';
+        passwordInput.value = password;
+
+        form.appendChild(csrfInput);
+        form.appendChild(passwordInput);
+        document.body.appendChild(form);
+        form.submit();
+    } else if (password) {
+        alert('Password must be at least 8 characters');
+    }
+}
+</script>
+{% endblock %}
