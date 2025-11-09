@@ -20,6 +20,7 @@ use VirPanel\Core\Http\Controllers\DomainController;
 use VirPanel\Core\Http\Controllers\EmailController;
 use VirPanel\Core\Http\Controllers\DatabaseController;
 use VirPanel\Core\Http\Controllers\SSLController;
+use VirPanel\Core\Http\Controllers\IPAddressController;
 use VirPanel\Core\Http\Middleware\GuestMiddleware;
 use VirPanel\Core\Http\Middleware\AuthenticateMiddleware;
 use VirPanel\Core\Http\Middleware\CsrfMiddleware;
@@ -91,6 +92,16 @@ return function (WebRouter $router) {
     $router->post('/admin/resellers/{id}', [ResellerController::class, 'update'], [AuthenticateMiddleware::class]);
     $router->post('/admin/resellers/{id}/suspend', [ResellerController::class, 'suspend'], [AuthenticateMiddleware::class]);
     $router->post('/admin/resellers/{id}/unsuspend', [ResellerController::class, 'unsuspend'], [AuthenticateMiddleware::class]);
+
+    // IP Address Management (Admin)
+    $router->get('/admin/ip-addresses', [IPAddressController::class, 'index'], [AuthenticateMiddleware::class]);
+    $router->post('/admin/ip-addresses', [IPAddressController::class, 'store'], [AuthenticateMiddleware::class]);
+    $router->post('/admin/ip-addresses/{id}', [IPAddressController::class, 'update'], [AuthenticateMiddleware::class]);
+    $router->post('/admin/ip-addresses/{id}/set-default', [IPAddressController::class, 'setDefault'], [AuthenticateMiddleware::class]);
+    $router->post('/admin/ip-addresses/{id}/delete', [IPAddressController::class, 'delete'], [AuthenticateMiddleware::class]);
+    $router->post('/admin/ip-addresses/{id}/ptr', [IPAddressController::class, 'updatePTR'], [AuthenticateMiddleware::class]);
+    $router->post('/admin/ip-addresses/assign', [IPAddressController::class, 'assignToAccount'], [AuthenticateMiddleware::class]);
+    $router->post('/admin/accounts/{id}/remove-ip', [IPAddressController::class, 'removeFromAccount'], [AuthenticateMiddleware::class]);
 
     // Module Management
     $router->get('/admin/modules', [ModuleController::class, 'index'], [AuthenticateMiddleware::class]);
