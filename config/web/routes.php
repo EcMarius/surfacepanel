@@ -26,6 +26,7 @@ use VirPanel\Core\Http\Controllers\DNSController;
 use VirPanel\Core\Http\Controllers\FTPController;
 use VirPanel\Core\Http\Controllers\CronController;
 use VirPanel\Core\Http\Controllers\BackupController;
+use VirPanel\Core\Http\Controllers\StatisticsController;
 use VirPanel\Core\Http\Middleware\GuestMiddleware;
 use VirPanel\Core\Http\Middleware\AuthenticateMiddleware;
 use VirPanel\Core\Http\Middleware\CsrfMiddleware;
@@ -224,6 +225,9 @@ return function (WebRouter $router) {
     $router->get('/user/backup/{id}/download', [BackupController::class, 'download'], [AuthenticateMiddleware::class]);
     $router->post('/user/backup/{id}/restore', [BackupController::class, 'restore'], [AuthenticateMiddleware::class]);
     $router->post('/user/backup/{id}/delete', [BackupController::class, 'delete'], [AuthenticateMiddleware::class]);
+
+    // Website Statistics (User)
+    $router->get('/user/statistics', [StatisticsController::class, 'index'], [AuthenticateMiddleware::class]);
 
     // Redirect root to appropriate dashboard
     $router->get('/', function($request) {
