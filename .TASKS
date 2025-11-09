@@ -71,14 +71,18 @@ PHASE 2: INSTALLER SYSTEM
 
 2.1 INSTALLER CORE
 ------------------
-[ ] Create installer bootstrap script
+[ ] Create install.sh bootstrap script with auto-download
+[ ] If files not found, download from {license_server_update_url}
+[ ] Support for VPS installation (resource-constrained)
+[ ] Support for standalone/dedicated server installation
 [ ] System requirements checker:
     - OS detection (CentOS, AlmaLinux, Rocky Linux, Ubuntu, Debian)
-    - Minimum RAM (2GB+)
-    - Disk space requirements
-    - CPU requirements
+    - Minimum RAM (512MB VPS, 2GB+ standalone)
+    - Disk space requirements (flexible for VPS)
+    - CPU requirements (1+ core VPS, 2+ standalone)
     - Network connectivity check
     - Port availability check (80, 443, 2086, 2087, 2082, 2083)
+    - VPS detection (OpenVZ, KVM, Xen, etc.)
 [ ] Pre-installation backup system
 [ ] Dependency installer:
     - Apache/Nginx
@@ -246,12 +250,34 @@ PHASE 4: WHM (WEB HOST MANAGER) - ADMIN PANEL
 [ ] Create hosting packages/plans
 [ ] Edit package settings
 [ ] Delete packages
-[ ] Package resource limits configuration
+[ ] Package resource limits configuration:
+    - Maximum domains (addon, parked, subdomains) or unlimited
+    - Maximum email accounts or unlimited
+    - Maximum FTP accounts or unlimited
+    - Maximum databases or unlimited
+    - Maximum MySQL disk space or unlimited
+    - Disk quota or unlimited
+    - Bandwidth quota or unlimited
+    - Inodes limit
+    - CPU limit
+    - RAM limit
+    - I/O limit
+    - Process limit
+    - SSH/Terminal access (enabled/disabled)
+    - Shell access type (jailed, bash, /bin/false)
+    - CGI access (enabled/disabled)
+    - Custom PHP.ini (enabled/disabled)
+    - Dedicated IP option
+    - SSL certificate option
+    - Backup access (enabled/disabled)
+    - Cron job limits
 [ ] Feature list assignment to packages
 [ ] Package pricing (for billing integration)
 [ ] Default package settings
 [ ] Package inheritance for resellers
 [ ] Package templates
+[ ] Unlimited option for each resource
+[ ] Per-package SSH/terminal isolation configuration
 
 4.4 DOMAIN MANAGEMENT
 ---------------------
@@ -265,6 +291,27 @@ PHASE 4: WHM (WEB HOST MANAGER) - ADMIN PANEL
 [ ] Domain renewal reminders
 [ ] Bulk domain operations
 [ ] Domain transfer tools
+
+4.4.1 CLOUDFLARE INTEGRATION
+-----------------------------
+[ ] Admin setting to allow users Cloudflare management
+[ ] Cloudflare API integration
+[ ] User Cloudflare account linking
+[ ] DNS zone import from Cloudflare
+[ ] DNS zone export to Cloudflare
+[ ] Cloudflare DNS record synchronization
+[ ] Cloudflare proxy status (orange/grey cloud)
+[ ] Cloudflare SSL/TLS settings
+[ ] Cloudflare cache purging
+[ ] Cloudflare security settings
+[ ] Cloudflare page rules
+[ ] Cloudflare firewall rules
+[ ] Cloudflare analytics display
+[ ] Cloudflare zone settings
+[ ] Auto-switch between Cloudflare and local DNS
+[ ] Cloudflare account limits per user/package
+[ ] Cloudflare API key management
+[ ] Cloudflare zone transfer wizard
 
 4.5 DNS MANAGEMENT
 ------------------
@@ -852,10 +899,14 @@ PHASE 6: SHARED COMPONENTS & LIBRARIES
 
 6.1 UI/UX DESIGN SYSTEM
 -----------------------
-[ ] Design system inspired by cPanel (modern take)
-[ ] Color scheme and branding guidelines
-[ ] Typography system
-[ ] Icon library
+[ ] Tailwind CSS implementation
+[ ] cPanel/WHM layout structure (modern interpretation)
+[ ] WHM-style left sidebar navigation
+[ ] cPanel-style card-based interface
+[ ] Design system inspired by cPanel aesthetics
+[ ] Color scheme and branding guidelines (cPanel blue/grey)
+[ ] Typography system matching cPanel
+[ ] Icon library (compatible with cPanel icons)
 [ ] Component library:
     - Buttons
     - Forms
@@ -1439,6 +1490,47 @@ PHASE 10: FUTURE EXTENSIBILITY
 [ ] Predictive scaling
 [ ] ChatOps integration
 [ ] API-first automation
+
+10.12 RESELLERS MODULE (PRIORITY AFTER MODULE SYSTEM)
+------------------------------------------------------
+[ ] Reseller account creation and management
+[ ] Reseller ACL (Access Control List)
+[ ] Reseller resource allocation and pooling
+[ ] Reseller package management
+[ ] Reseller branding customization:
+    - Custom logo
+    - Custom colors/theme
+    - Custom domain for control panel
+    - Custom email templates
+    - Custom header/footer
+[ ] Reseller client account creation
+[ ] Reseller client management
+[ ] Reseller bandwidth/disk pooling
+[ ] Reseller overselling options
+[ ] Reseller API access
+[ ] Reseller billing integration
+[ ] Reseller white-label options
+[ ] Reseller feature restrictions
+[ ] Reseller suspension/unsuspension
+[ ] Reseller account termination
+[ ] Reseller statistics and reporting
+[ ] Reseller resource usage tracking
+[ ] Reseller commission/revenue sharing
+[ ] Reseller multi-tier support
+[ ] Reseller nameserver configuration
+[ ] Reseller package templates
+[ ] Reseller client migration tools
+[ ] Reseller demo/trial accounts
+[ ] Reseller WHMCS integration
+[ ] Reseller Blesta integration
+[ ] Reseller access logs
+[ ] Reseller privilege escalation prevention
+[ ] Reseller IP address allocation
+[ ] Reseller SSL certificate management
+[ ] Reseller backup management
+[ ] Reseller client limits per package
+[ ] Reseller shell access restrictions
+[ ] Reseller module/feature access control
 
 ================================================================================
 PHASE 11: DEPLOYMENT & DISTRIBUTION
