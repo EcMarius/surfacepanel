@@ -1,8 +1,8 @@
 <?php
 
-namespace SurfacePanel\Core;
+namespace VirPanel\Core;
 
-use SurfacePanel\Core\Contracts\ModuleInterface;
+use VirPanel\Core\Contracts\ModuleInterface;
 
 /**
  * Module Manager

@@ -1,6 +1,6 @@
 <?php
 
-namespace SurfacePanel\Core;
+namespace VirPanel\Core;
 
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -11,7 +11,7 @@ use Symfony\Component\EventDispatcher\EventDispatcher;
 use Dotenv\Dotenv;
 
 /**
- * SurfacePanel Core Application
+ * VirPanel Core Application
  *
  * Main application bootstrap and dependency injection container
  */

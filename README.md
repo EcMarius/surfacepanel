@@ -1,4 +1,4 @@
-# SurfacePanel
+# VirPanel
 
 **Modern Web Hosting Control Panel - Alternative to cPanel/WHM**
 
@@ -6,7 +6,7 @@ Version: 0.1.0 (Alpha - In Development)
 
 ## Overview
 
-SurfacePanel is a comprehensive, modern web hosting control panel designed as a powerful alternative to cPanel/WHM. Built with extensibility and performance in mind, it provides everything needed to manage web hosting servers, with support for future expansions like game servers and virtualization.
+VirPanel is a comprehensive, modern web hosting control panel designed as a powerful alternative to cPanel/WHM. Built with extensibility and performance in mind, it provides everything needed to manage web hosting servers, with support for future expansions like game servers and virtualization.
 
 ## Features
 
@@ -58,7 +58,7 @@ cp .env.example .env
 
 ### Module Development
 
-Create modules to extend SurfacePanel:
+Create modules to extend VirPanel:
 
 ```php
 class YourModule implements ModuleInterface {
@@ -71,7 +71,7 @@ See `src/modules/Example/` for a template.
 
 ## Documentation
 
-Full documentation coming soon at https://docs.surfacepanel.com
+Full documentation coming soon at https://docs.virpanel.com
 
 ## License
 
@@ -79,5 +79,5 @@ Proprietary - See LICENSE file
 
 ## Support
 
-- Issues: https://github.com/EcMarius/surfacepanel/issues
-- Email: team@surfacepanel.com
+- Issues: https://github.com/EcMarius/virpanel/issues
+- Email: team@virpanel.com

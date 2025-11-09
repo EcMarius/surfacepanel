@@ -1,6 +1,6 @@
 <?php
 
-use SurfacePanel\Core\Application;
+use VirPanel\Core\Application;
 
 if (!function_exists('app')) {
     /**

@@ -6,7 +6,7 @@ return [
     | Application Name
     |--------------------------------------------------------------------------
     */
-    'name' => env('APP_NAME', 'SurfacePanel'),
+    'name' => env('APP_NAME', 'VirPanel'),
 
     /*
     |--------------------------------------------------------------------------
@@ -69,15 +69,15 @@ return [
     |--------------------------------------------------------------------------
     */
     'providers' => [
-        \SurfacePanel\Core\Providers\AppServiceProvider::class,
-        \SurfacePanel\Core\Providers\AuthServiceProvider::class,
-        \SurfacePanel\Core\Providers\EventServiceProvider::class,
-        \SurfacePanel\Core\Providers\RouteServiceProvider::class,
-        \SurfacePanel\Core\Providers\DatabaseServiceProvider::class,
-        \SurfacePanel\Core\Providers\CacheServiceProvider::class,
-        \SurfacePanel\Core\Providers\QueueServiceProvider::class,
-        \SurfacePanel\Core\Providers\ModuleServiceProvider::class,
-        \SurfacePanel\Core\Providers\TemplateServiceProvider::class,
+        \VirPanel\Core\Providers\AppServiceProvider::class,
+        \VirPanel\Core\Providers\AuthServiceProvider::class,
+        \VirPanel\Core\Providers\EventServiceProvider::class,
+        \VirPanel\Core\Providers\RouteServiceProvider::class,
+        \VirPanel\Core\Providers\DatabaseServiceProvider::class,
+        \VirPanel\Core\Providers\CacheServiceProvider::class,
+        \VirPanel\Core\Providers\QueueServiceProvider::class,
+        \VirPanel\Core\Providers\ModuleServiceProvider::class,
+        \VirPanel\Core\Providers\TemplateServiceProvider::class,
     ],
 
     /*
@@ -86,23 +86,23 @@ return [
     |--------------------------------------------------------------------------
     */
     'aliases' => [
-        'App' => \SurfacePanel\Core\Facades\App::class,
-        'Auth' => \SurfacePanel\Core\Facades\Auth::class,
-        'Cache' => \SurfacePanel\Core\Facades\Cache::class,
-        'Config' => \SurfacePanel\Core\Facades\Config::class,
-        'DB' => \SurfacePanel\Core\Facades\DB::class,
-        'Event' => \SurfacePanel\Core\Facades\Event::class,
-        'Hash' => \SurfacePanel\Core\Facades\Hash::class,
-        'Log' => \SurfacePanel\Core\Facades\Log::class,
-        'Queue' => \SurfacePanel\Core\Facades\Queue::class,
-        'Request' => \SurfacePanel\Core\Facades\Request::class,
-        'Response' => \SurfacePanel\Core\Facades\Response::class,
-        'Route' => \SurfacePanel\Core\Facades\Route::class,
-        'Session' => \SurfacePanel\Core\Facades\Session::class,
-        'Storage' => \SurfacePanel\Core\Facades\Storage::class,
-        'Validator' => \SurfacePanel\Core\Facades\Validator::class,
-        'Module' => \SurfacePanel\Core\Facades\Module::class,
-        'Template' => \SurfacePanel\Core\Facades\Template::class,
+        'App' => \VirPanel\Core\Facades\App::class,
+        'Auth' => \VirPanel\Core\Facades\Auth::class,
+        'Cache' => \VirPanel\Core\Facades\Cache::class,
+        'Config' => \VirPanel\Core\Facades\Config::class,
+        'DB' => \VirPanel\Core\Facades\DB::class,
+        'Event' => \VirPanel\Core\Facades\Event::class,
+        'Hash' => \VirPanel\Core\Facades\Hash::class,
+        'Log' => \VirPanel\Core\Facades\Log::class,
+        'Queue' => \VirPanel\Core\Facades\Queue::class,
+        'Request' => \VirPanel\Core\Facades\Request::class,
+        'Response' => \VirPanel\Core\Facades\Response::class,
+        'Route' => \VirPanel\Core\Facades\Route::class,
+        'Session' => \VirPanel\Core\Facades\Session::class,
+        'Storage' => \VirPanel\Core\Facades\Storage::class,
+        'Validator' => \VirPanel\Core\Facades\Validator::class,
+        'Module' => \VirPanel\Core\Facades\Module::class,
+        'Template' => \VirPanel\Core\Facades\Template::class,
     ],
 
     /*
@@ -136,16 +136,16 @@ return [
     |--------------------------------------------------------------------------
     */
     'paths' => [
-        'base' => '/usr/local/surfacepanel',
-        'data' => '/var/surfacepanel',
-        'logs' => '/var/surfacepanel/logs',
-        'cache' => '/var/surfacepanel/cache',
-        'backups' => '/var/surfacepanel/backups',
-        'uploads' => '/var/surfacepanel/uploads',
-        'sessions' => '/var/surfacepanel/sessions',
-        'modules' => '/usr/local/surfacepanel/modules',
-        'templates' => '/usr/local/surfacepanel/templates',
-        'scripts' => '/usr/local/surfacepanel/scripts',
+        'base' => '/usr/local/virpanel',
+        'data' => '/var/virpanel',
+        'logs' => '/var/virpanel/logs',
+        'cache' => '/var/virpanel/cache',
+        'backups' => '/var/virpanel/backups',
+        'uploads' => '/var/virpanel/uploads',
+        'sessions' => '/var/virpanel/sessions',
+        'modules' => '/usr/local/virpanel/modules',
+        'templates' => '/usr/local/virpanel/templates',
+        'scripts' => '/usr/local/virpanel/scripts',
         'home' => '/home',
     ],
 

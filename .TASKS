@@ -11,10 +11,10 @@ PHASE 1: PROJECT FOUNDATION & ARCHITECTURE
 ----------------------
 [ ] Initialize project directory structure
 [ ] Create main application directories:
-    - /usr/local/surfacepanel (main application)
-    - /var/surfacepanel (data, logs, configs)
-    - /etc/surfacepanel (system configs)
-    - /opt/surfacepanel (optional components)
+    - /usr/local/virpanel (main application)
+    - /var/virpanel (data, logs, configs)
+    - /etc/virpanel (system configs)
+    - /opt/virpanel (optional components)
 [ ] Set up configuration management system
 [ ] Define system requirements and dependencies
 [ ] Create development environment setup
@@ -1401,7 +1401,7 @@ PHASE 10: FUTURE EXTENSIBILITY
 
 10.10 STRUCTURED SCRIPTS FOLDER (CPANEL-LIKE)
 ----------------------------------------------
-[ ] /usr/local/surfacepanel/scripts/ structure
+[ ] /usr/local/virpanel/scripts/ structure
 [ ] Account management scripts:
     - createacct (create account)
     - removeacct (remove account)
@@ -1454,7 +1454,7 @@ PHASE 10: FUTURE EXTENSIBILITY
     - restorepkg (restore package)
     - transfer (transfer from remote server)
 [ ] Maintenance scripts:
-    - upcp (update SurfacePanel)
+    - upcp (update VirPanel)
     - check_cpanel_rpms (verify installation)
     - fixeverything (auto-fix common issues)
     - cleanuplogs (cleanup old logs)

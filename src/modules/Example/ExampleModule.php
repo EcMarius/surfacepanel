@@ -1,9 +1,9 @@
 <?php
 
-namespace SurfacePanel\Modules\Example;
+namespace VirPanel\Modules\Example;
 
-use SurfacePanel\Core\Application;
-use SurfacePanel\Core\Contracts\ModuleInterface;
+use VirPanel\Core\Application;
+use VirPanel\Core\Contracts\ModuleInterface;
 
 /**
  * Example Module
@@ -108,6 +108,6 @@ class ExampleModule implements ModuleInterface
      */
     public function getDescription(): string
     {
-        return 'An example module showing how to create modules for SurfacePanel';
+        return 'An example module showing how to create modules for VirPanel';
     }
 }

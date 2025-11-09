@@ -1,13 +1,13 @@
 {
-    "name": "surfacepanel/surfacepanel",
-    "description": "SurfacePanel - Modern Web Hosting Control Panel",
+    "name": "virpanel/virpanel",
+    "description": "VirPanel - Modern Web Hosting Control Panel",
     "type": "project",
     "license": "proprietary",
     "version": "0.1.0",
     "authors": [
         {
-            "name": "SurfacePanel Team",
-            "email": "team@surfacepanel.com"
+            "name": "VirPanel Team",
+            "email": "team@virpanel.com"
         }
     ],
     "require": {
@@ -51,12 +51,12 @@
     },
     "autoload": {
         "psr-4": {
-            "SurfacePanel\\Core\\": "src/core/",
-            "SurfacePanel\\Api\\": "src/api/",
-            "SurfacePanel\\Modules\\": "src/modules/",
-            "SurfacePanel\\Services\\": "src/services/",
-            "SurfacePanel\\Database\\": "src/database/",
-            "SurfacePanel\\Utils\\": "src/utils/"
+            "VirPanel\\Core\\": "src/core/",
+            "VirPanel\\Api\\": "src/api/",
+            "VirPanel\\Modules\\": "src/modules/",
+            "VirPanel\\Services\\": "src/services/",
+            "VirPanel\\Database\\": "src/database/",
+            "VirPanel\\Utils\\": "src/utils/"
         },
         "files": [
             "src/core/helpers.php"
@@ -64,7 +64,7 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "SurfacePanel\\Tests\\": "tests/"
+            "VirPanel\\Tests\\": "tests/"
         }
     },
     "scripts": {

@@ -1,7 +1,7 @@
 {
-  "name": "surfacepanel",
+  "name": "virpanel",
   "version": "0.1.0",
-  "description": "SurfacePanel - Modern Web Hosting Control Panel",
+  "description": "VirPanel - Modern Web Hosting Control Panel",
   "private": true,
   "scripts": {
     "dev": "vite",

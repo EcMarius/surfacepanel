@@ -1,8 +1,8 @@
 <?php
 
-namespace SurfacePanel\Core\Contracts;
+namespace VirPanel\Core\Contracts;
 
-use SurfacePanel\Core\Application;
+use VirPanel\Core\Application;
 
 /**
  * Module Interface
