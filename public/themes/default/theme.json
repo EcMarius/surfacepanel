@@ -1,0 +1,39 @@
+{
+    "name": "default",
+    "display_name": "VirPanel Default Theme",
+    "description": "Clean and modern default theme for VirPanel",
+    "version": "1.0.0",
+    "author": "VirPanel Team",
+    "author_url": "https://virpanel.com",
+    "type": "both",
+    "preview_image": "preview.png",
+    "config": {
+        "colors": {
+            "primary": "#3B82F6",
+            "secondary": "#6B7280",
+            "success": "#10B981",
+            "danger": "#EF4444",
+            "warning": "#F59E0B",
+            "info": "#3B82F6"
+        },
+        "fonts": {
+            "primary": "Inter, sans-serif",
+            "monospace": "JetBrains Mono, monospace"
+        },
+        "features": {
+            "dark_mode": true,
+            "responsive": true,
+            "animations": true
+        }
+    },
+    "supports": {
+        "whm": true,
+        "cpanel": true,
+        "mobile": true,
+        "tablet": true
+    },
+    "requirements": {
+        "php": ">=8.1",
+        "virpanel": ">=0.1.0"
+    }
+}
