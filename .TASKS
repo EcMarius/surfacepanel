@@ -1229,7 +1229,205 @@ PHASE 10: FUTURE EXTENSIBILITY
 [ ] Third-party developer portal
 [ ] Plugin revenue sharing model
 
-10.6 ADVANCED AUTOMATION
+10.6 MODULES SYSTEM (ADMIN-UPLOADABLE)
+---------------------------------------
+[ ] Module upload interface (admin)
+[ ] Module packaging format (.zip, .tar.gz)
+[ ] Module validation and verification
+[ ] Module signature verification
+[ ] Module installation wizard
+[ ] Module activation/deactivation
+[ ] Module configuration interface
+[ ] Module dependency resolution
+[ ] Module version compatibility checking
+[ ] Module auto-update system
+[ ] Module rollback capability
+[ ] Module marketplace integration
+[ ] Module sandboxing/isolation
+[ ] Module permissions and capabilities
+[ ] Module hooks and filters system
+[ ] Module API documentation
+[ ] Module development CLI tools
+[ ] Module testing framework
+[ ] Module manifest (metadata) system
+[ ] Module conflict detection
+[ ] Core module registry
+[ ] Third-party module repository
+[ ] Module code review process (marketplace)
+[ ] Module security scanning
+[ ] Module performance profiling
+
+10.7 TEMPLATE SYSTEM (ADMIN & USER FACING)
+-------------------------------------------
+[ ] Template engine selection (Twig, Blade, etc.)
+[ ] Admin template system
+[ ] User panel template system
+[ ] Template upload interface (admin)
+[ ] Template packaging format
+[ ] Template validation and sanitization
+[ ] Template installation wizard
+[ ] Template activation/deactivation
+[ ] Live template preview
+[ ] Template customizer (colors, fonts, logos)
+[ ] Template inheritance/parent-child
+[ ] Template override system
+[ ] Template caching mechanism
+[ ] Template compilation
+[ ] Template variable system
+[ ] Template hooks and actions
+[ ] Template marketplace
+[ ] Template version management
+[ ] Template backup before update
+[ ] Template rollback capability
+[ ] Responsive template requirements
+[ ] Dark mode support in templates
+[ ] Accessibility compliance checker
+[ ] Template documentation generator
+[ ] Template screenshot generator
+[ ] Custom CSS/JS injection per template
+[ ] Template translation support (i18n)
+[ ] Template performance optimization
+[ ] Template security scanning
+
+10.8 TEMPLATE SWITCHER (USER-FACING)
+-------------------------------------
+[ ] User template selection interface
+[ ] Template preview modal
+[ ] Live template switching (no logout)
+[ ] Per-user template preference storage
+[ ] Template favorites/bookmarks
+[ ] Template search and filtering
+[ ] Template categories/tags
+[ ] Template ratings and reviews
+[ ] Template screenshots/demos
+[ ] Template compatibility indicator
+[ ] Recently used templates
+[ ] Default template fallback
+[ ] Template switch confirmation
+[ ] Template settings persistence
+[ ] Mobile-optimized template switcher
+[ ] Template recommendation engine
+[ ] Template usage analytics
+[ ] A/B testing for templates
+
+10.9 COMPREHENSIVE API SYSTEM
+------------------------------
+[ ] RESTful API (full CRUD operations)
+[ ] GraphQL API endpoint
+[ ] API versioning (v1, v2, etc.)
+[ ] API authentication (OAuth 2.0, JWT, API keys)
+[ ] API rate limiting per user/IP
+[ ] API usage quotas
+[ ] API request/response logging
+[ ] API documentation (OpenAPI/Swagger)
+[ ] Interactive API explorer (Swagger UI)
+[ ] API SDKs/client libraries:
+    - PHP SDK
+    - Python SDK
+    - Node.js SDK
+    - Ruby SDK
+    - Go SDK
+    - Java SDK
+    - .NET SDK
+[ ] API webhooks system
+[ ] API event subscriptions
+[ ] API error handling and codes
+[ ] API pagination standards
+[ ] API filtering and sorting
+[ ] API search capabilities
+[ ] API batch operations
+[ ] API async job processing
+[ ] API response caching
+[ ] API CORS configuration
+[ ] API sandbox environment
+[ ] API testing tools
+[ ] API monitoring and analytics
+[ ] API deprecation strategy
+[ ] API changelog and migrations
+[ ] API security scanning
+[ ] API performance optimization
+[ ] API mock server for development
+
+10.10 STRUCTURED SCRIPTS FOLDER (CPANEL-LIKE)
+----------------------------------------------
+[ ] /usr/local/surfacepanel/scripts/ structure
+[ ] Account management scripts:
+    - createacct (create account)
+    - removeacct (remove account)
+    - modifyacct (modify account)
+    - suspendacct (suspend account)
+    - unsuspendacct (unsuspend account)
+    - changepassword (change account password)
+    - listaccts (list all accounts)
+[ ] Domain management scripts:
+    - adddomain (add addon domain)
+    - removedomain (remove domain)
+    - listdomains (list domains)
+    - parkdomain (park domain)
+    - unparkdomain (unpark domain)
+[ ] Email management scripts:
+    - addemail (create email account)
+    - removeemail (delete email account)
+    - listforwarders (list email forwarders)
+    - addforwarder (add email forwarder)
+[ ] Database management scripts:
+    - createdb (create database)
+    - removedb (remove database)
+    - adddbuser (add database user)
+    - removedbuser (remove database user)
+[ ] Backup/restore scripts:
+    - backup (create backup)
+    - restore (restore from backup)
+    - listbackups (list available backups)
+[ ] DNS management scripts:
+    - adddns (add DNS record)
+    - removedns (remove DNS record)
+    - rebuilddns (rebuild DNS zone)
+    - synczone (sync DNS zones)
+[ ] SSL certificate scripts:
+    - installssl (install SSL certificate)
+    - removessl (remove SSL certificate)
+    - autossl (run AutoSSL)
+    - listssl (list SSL certificates)
+[ ] Service management scripts:
+    - restartsrv (restart service)
+    - rebuildhttpdconf (rebuild web server config)
+    - updateuserdomains (update user domains)
+    - updateuserdatacache (update user data cache)
+[ ] Quota and resource scripts:
+    - setquota (set disk quota)
+    - getquota (get disk quota)
+    - fixquotas (fix quota issues)
+[ ] Migration scripts:
+    - pkgacct (package account)
+    - restorepkg (restore package)
+    - transfer (transfer from remote server)
+[ ] Maintenance scripts:
+    - upcp (update SurfacePanel)
+    - check_cpanel_rpms (verify installation)
+    - fixeverything (auto-fix common issues)
+    - cleanuplogs (cleanup old logs)
+[ ] Statistics scripts:
+    - runweblogs (process web logs)
+    - updatebandwidth (update bandwidth)
+    - diskusage (calculate disk usage)
+[ ] Security scripts:
+    - check_security (security audit)
+    - harden_system (apply security hardening)
+    - scan_malware (malware scan)
+[ ] CLI wrapper for all scripts
+[ ] Script input validation
+[ ] Script error handling
+[ ] Script logging to syslog
+[ ] Script exit codes standardization
+[ ] Script --help documentation
+[ ] Script --json output option
+[ ] Script --force option (skip confirmations)
+[ ] Script --dry-run option
+[ ] Script user/permission checking
+[ ] Script lock files (prevent concurrent runs)
+
+10.11 ADVANCED AUTOMATION
 -------------------------
 [ ] Workflow automation builder
 [ ] Ansible playbook integration
