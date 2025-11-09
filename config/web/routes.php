@@ -16,6 +16,7 @@ use VirPanel\Core\Http\Controllers\FileManagerController;
 use VirPanel\Core\Http\Controllers\ResellerController;
 use VirPanel\Core\Http\Controllers\ModuleController;
 use VirPanel\Core\Http\Controllers\TemplateController;
+use VirPanel\Core\Http\Controllers\DomainController;
 use VirPanel\Core\Http\Middleware\GuestMiddleware;
 use VirPanel\Core\Http\Middleware\AuthenticateMiddleware;
 use VirPanel\Core\Http\Middleware\CsrfMiddleware;
@@ -106,6 +107,17 @@ return function (WebRouter $router) {
     // Template Selection (User)
     $router->get('/user/templates', [TemplateController::class, 'userIndex'], [AuthenticateMiddleware::class]);
     $router->post('/user/templates/{name}/select', [TemplateController::class, 'setUserTemplate'], [AuthenticateMiddleware::class]);
+
+    // Domain Management (User)
+    $router->get('/user/domains', [DomainController::class, 'index'], [AuthenticateMiddleware::class]);
+    $router->post('/user/domains/addon', [DomainController::class, 'storeAddonDomain'], [AuthenticateMiddleware::class]);
+    $router->post('/user/domains/subdomain', [DomainController::class, 'storeSubdomain'], [AuthenticateMiddleware::class]);
+    $router->post('/user/domains/parked', [DomainController::class, 'storeParkedDomain'], [AuthenticateMiddleware::class]);
+    $router->post('/user/domains/redirect', [DomainController::class, 'storeRedirect'], [AuthenticateMiddleware::class]);
+    $router->post('/user/domains/addon/{id}/delete', [DomainController::class, 'deleteAddonDomain'], [AuthenticateMiddleware::class]);
+    $router->post('/user/domains/subdomain/{id}/delete', [DomainController::class, 'deleteSubdomain'], [AuthenticateMiddleware::class]);
+    $router->post('/user/domains/parked/{id}/delete', [DomainController::class, 'deleteParkedDomain'], [AuthenticateMiddleware::class]);
+    $router->post('/user/domains/redirect/{id}/delete', [DomainController::class, 'deleteRedirect'], [AuthenticateMiddleware::class]);
 
     // Redirect root to appropriate dashboard
     $router->get('/', function($request) {

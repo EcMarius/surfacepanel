@@ -1,0 +1,395 @@
+{% extends 'layouts/user.html.twig' %}
+
+{% block title %}Domain Management{% endblock %}
+
+{% block content %}
+<div class="px-4 sm:px-6 lg:px-8" x-data="{ tab: 'addon' }">
+    <div class="sm:flex sm:items-center">
+        <div class="sm:flex-auto">
+            <h1 class="text-2xl font-semibold text-gray-900">Domains</h1>
+            <p class="mt-2 text-sm text-gray-700">Manage your domains, subdomains, and redirects</p>
+        </div>
+    </div>
+
+    {% if app.session.get('success') %}
+    <div class="mt-4 rounded-md bg-green-50 p-4">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" />
+                </svg>
+            </div>
+            <div class="ml-3">
+                <p class="text-sm font-medium text-green-800">{{ app.session.get('success') }}</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if app.session.get('error') %}
+    <div class="mt-4 rounded-md bg-red-50 p-4">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" />
+                </svg>
+            </div>
+            <div class="ml-3">
+                <p class="text-sm font-medium text-red-800">{{ app.session.get('error') }}</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Main Domain Info -->
+    <div class="mt-8 bg-blue-50 rounded-lg p-6">
+        <div class="flex items-center">
+            <svg class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" />
+            </svg>
+            <div class="ml-3">
+                <h3 class="text-sm font-medium text-gray-900">Main Domain</h3>
+                <p class="mt-1 text-lg font-semibold text-blue-900">{{ mainDomain }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="mt-8">
+        <div class="border-b border-gray-200">
+            <nav class="-mb-px flex space-x-8">
+                <button @click="tab = 'addon'" :class="tab === 'addon' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'" class="whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium">
+                    Addon Domains ({{ addonDomains | length }})
+                </button>
+                <button @click="tab = 'subdomain'" :class="tab === 'subdomain' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'" class="whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium">
+                    Subdomains ({{ subdomains | length }})
+                </button>
+                <button @click="tab = 'parked'" :class="tab === 'parked' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'" class="whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium">
+                    Parked Domains ({{ parkedDomains | length }})
+                </button>
+                <button @click="tab = 'redirect'" :class="tab === 'redirect' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'" class="whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium">
+                    Redirects ({{ redirects | length }})
+                </button>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Addon Domains Tab -->
+    <div x-show="tab === 'addon'" class="mt-6">
+        <div class="mb-4">
+            <button @click="$refs.addonForm.classList.toggle('hidden')" class="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500">
+                Add Addon Domain
+            </button>
+        </div>
+
+        <!-- Add Addon Domain Form -->
+        <div ref="addonForm" class="hidden mb-6 bg-white shadow sm:rounded-lg p-6">
+            <h3 class="text-lg font-medium mb-4">Create Addon Domain</h3>
+            <form action="/user/domains/addon" method="POST">
+                {{ csrf_field() | raw }}
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">New Domain Name *</label>
+                        <input type="text" name="domain" required placeholder="example.com" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Subdomain *</label>
+                        <input type="text" name="subdomain" required placeholder="example" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                        <p class="mt-1 text-xs text-gray-500">Used for directory name</p>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700">Document Root (optional)</label>
+                        <input type="text" name="document_root" placeholder="/home/username/example" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                    </div>
+                </div>
+                <div class="mt-4 flex gap-3">
+                    <button type="submit" class="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500">
+                        Create Addon Domain
+                    </button>
+                    <button type="button" @click="$refs.addonForm.classList.add('hidden')" class="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Addon Domains List -->
+        {% if addonDomains %}
+        <div class="overflow-hidden bg-white shadow sm:rounded-lg">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Domain</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Subdomain</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Document Root</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 bg-white">
+                    {% for domain in addonDomains %}
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ domain.domain }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ domain.subdomain }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-500">{{ domain.document_root }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <span class="inline-flex rounded-full bg-green-100 px-2 text-xs font-semibold text-green-800">{{ domain.status }}</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
+                            <form action="/user/domains/addon/{{ domain.id }}/delete" method="POST" class="inline" onsubmit="return confirm('Delete this addon domain?');">
+                                {{ csrf_field() | raw }}
+                                <button type="submit" class="text-red-600 hover:text-red-900">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-12 bg-white rounded-lg shadow">
+            <p class="text-sm text-gray-500">No addon domains yet. Create one to get started.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Subdomains Tab -->
+    <div x-show="tab === 'subdomain'" class="mt-6">
+        <div class="mb-4">
+            <button @click="$refs.subdomainForm.classList.toggle('hidden')" class="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500">
+                Add Subdomain
+            </button>
+        </div>
+
+        <!-- Add Subdomain Form -->
+        <div ref="subdomainForm" class="hidden mb-6 bg-white shadow sm:rounded-lg p-6">
+            <h3 class="text-lg font-medium mb-4">Create Subdomain</h3>
+            <form action="/user/domains/subdomain" method="POST">
+                {{ csrf_field() | raw }}
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Subdomain *</label>
+                        <input type="text" name="subdomain" required placeholder="blog" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Domain *</label>
+                        <select name="domain" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                            <option value="{{ mainDomain }}">{{ mainDomain }}</option>
+                            {% for domain in addonDomains %}
+                            <option value="{{ domain.domain }}">{{ domain.domain }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700">Document Root (optional)</label>
+                        <input type="text" name="document_root" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                    </div>
+                </div>
+                <div class="mt-4 flex gap-3">
+                    <button type="submit" class="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500">
+                        Create Subdomain
+                    </button>
+                    <button type="button" @click="$refs.subdomainForm.classList.add('hidden')" class="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Subdomains List -->
+        {% if subdomains %}
+        <div class="overflow-hidden bg-white shadow sm:rounded-lg">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Subdomain</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Document Root</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 bg-white">
+                    {% for subdomain in subdomains %}
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ subdomain.full_domain }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-500">{{ subdomain.document_root }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <span class="inline-flex rounded-full bg-green-100 px-2 text-xs font-semibold text-green-800">{{ subdomain.status }}</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
+                            <form action="/user/domains/subdomain/{{ subdomain.id }}/delete" method="POST" class="inline" onsubmit="return confirm('Delete this subdomain?');">
+                                {{ csrf_field() | raw }}
+                                <button type="submit" class="text-red-600 hover:text-red-900">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-12 bg-white rounded-lg shadow">
+            <p class="text-sm text-gray-500">No subdomains yet. Create one to get started.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Parked Domains Tab -->
+    <div x-show="tab === 'parked'" class="mt-6">
+        <div class="mb-4">
+            <button @click="$refs.parkedForm.classList.toggle('hidden')" class="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500">
+                Add Parked Domain
+            </button>
+        </div>
+
+        <!-- Add Parked Domain Form -->
+        <div ref="parkedForm" class="hidden mb-6 bg-white shadow sm:rounded-lg p-6">
+            <h3 class="text-lg font-medium mb-4">Park a Domain</h3>
+            <form action="/user/domains/parked" method="POST">
+                {{ csrf_field() | raw }}
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Domain to Park *</label>
+                    <input type="text" name="domain" required placeholder="example.com" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                    <p class="mt-1 text-xs text-gray-500">This domain will show the same content as your main domain</p>
+                </div>
+                <div class="mt-4 flex gap-3">
+                    <button type="submit" class="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500">
+                        Park Domain
+                    </button>
+                    <button type="button" @click="$refs.parkedForm.classList.add('hidden')" class="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Parked Domains List -->
+        {% if parkedDomains %}
+        <div class="overflow-hidden bg-white shadow sm:rounded-lg">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Parked Domain</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Points To</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 bg-white">
+                    {% for domain in parkedDomains %}
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ domain.domain }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ domain.points_to }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <span class="inline-flex rounded-full bg-green-100 px-2 text-xs font-semibold text-green-800">{{ domain.status }}</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
+                            <form action="/user/domains/parked/{{ domain.id }}/delete" method="POST" class="inline" onsubmit="return confirm('Delete this parked domain?');">
+                                {{ csrf_field() | raw }}
+                                <button type="submit" class="text-red-600 hover:text-red-900">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-12 bg-white rounded-lg shadow">
+            <p class="text-sm text-gray-500">No parked domains yet. Park a domain to get started.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Redirects Tab -->
+    <div x-show="tab === 'redirect'" class="mt-6">
+        <div class="mb-4">
+            <button @click="$refs.redirectForm.classList.toggle('hidden')" class="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500">
+                Add Redirect
+            </button>
+        </div>
+
+        <!-- Add Redirect Form -->
+        <div ref="redirectForm" class="hidden mb-6 bg-white shadow sm:rounded-lg p-6">
+            <h3 class="text-lg font-medium mb-4">Create Domain Redirect</h3>
+            <form action="/user/domains/redirect" method="POST">
+                {{ csrf_field() | raw }}
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Domain/Path *</label>
+                        <input type="text" name="domain" required placeholder="example.com or example.com/path" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Redirect To *</label>
+                        <input type="url" name="redirect_to" required placeholder="https://newdomain.com" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Redirect Type</label>
+                        <select name="redirect_type" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                            <option value="301">Permanent (301)</option>
+                            <option value="302">Temporary (302)</option>
+                        </select>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <label class="flex items-center">
+                            <input type="checkbox" name="match_www" value="1" class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
+                            <span class="ml-2 text-sm text-gray-700">Redirect www</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" name="wildcard" value="1" class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
+                            <span class="ml-2 text-sm text-gray-700">Wildcard redirect</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="mt-4 flex gap-3">
+                    <button type="submit" class="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500">
+                        Create Redirect
+                    </button>
+                    <button type="button" @click="$refs.redirectForm.classList.add('hidden')" class="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Redirects List -->
+        {% if redirects %}
+        <div class="overflow-hidden bg-white shadow sm:rounded-lg">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Domain</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Redirects To</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 bg-white">
+                    {% for redirect in redirects %}
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ redirect.domain }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-500">{{ redirect.redirect_to }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ redirect.redirect_type }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <span class="inline-flex rounded-full bg-green-100 px-2 text-xs font-semibold text-green-800">{{ redirect.status }}</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
+                            <form action="/user/domains/redirect/{{ redirect.id }}/delete" method="POST" class="inline" onsubmit="return confirm('Delete this redirect?');">
+                                {{ csrf_field() | raw }}
+                                <button type="submit" class="text-red-600 hover:text-red-900">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-12 bg-white rounded-lg shadow">
+            <p class="text-sm text-gray-500">No redirects yet. Create one to get started.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
