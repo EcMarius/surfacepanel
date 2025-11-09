@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VirPanel API Documentation</title>
+    <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5.10.0/swagger-ui.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+        .swagger-ui .topbar {
+            display: none;
+        }
+        .custom-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+        .custom-header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            font-weight: bold;
+        }
+        .custom-header p {
+            margin: 0.5rem 0 0 0;
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        .api-info {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+        .info-card {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border-radius: 4px;
+        }
+        .info-card h3 {
+            margin-top: 0;
+            color: #667eea;
+        }
+        .code-block {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 1rem;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+        }
+        .endpoint-example {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        @media (max-width: 768px) {
+            .endpoint-example {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Custom Header -->
+    <div class="custom-header">
+        <h1>🚀 VirPanel API Documentation</h1>
+        <p>Complete RESTful API for Web Hosting Automation</p>
+    </div>
+
+    <!-- API Information -->
+    <div class="api-info">
+        <div class="info-card">
+            <h3>🔑 Authentication</h3>
+            <p>All API requests require authentication using a Bearer token. Generate your API token from the admin panel:</p>
+            <div class="code-block">
+                GET /admin/api/tokens
+            </div>
+            <p style="margin-top: 1rem;">Include your token in the Authorization header:</p>
+            <div class="code-block">
+                Authorization: Bearer vp_your_token_here
+            </div>
+        </div>
+
+        <div class="info-card">
+            <h3>⚡ Rate Limiting</h3>
+            <p>API requests are rate-limited to <strong>100 requests per minute</strong> per token. Rate limit information is included in response headers:</p>
+            <div class="code-block">
+                X-RateLimit-Limit: 100<br>
+                X-RateLimit-Remaining: 95<br>
+                X-RateLimit-Reset: 1234567890
+            </div>
+        </div>
+
+        <div class="info-card">
+            <h3>📝 Quick Start Example</h3>
+            <p>Create a new hosting account:</p>
+            <div class="endpoint-example">
+                <div>
+                    <strong>Request:</strong>
+                    <div class="code-block" style="margin-top: 0.5rem;">
+POST {{ api_url }}/accounts
+Content-Type: application/json
+Authorization: Bearer vp_your_token
+
+{
+  "username": "john",
+  "domain": "example.com",
+  "email": "john@example.com",
+  "password": "SecurePass123!",
+  "package_id": 1
+}
+                    </div>
+                </div>
+                <div>
+                    <strong>Response:</strong>
+                    <div class="code-block" style="margin-top: 0.5rem;">
+{
+  "success": true,
+  "message": "Account created",
+  "data": {
+    "id": 42,
+    "username": "john",
+    "domain": "example.com"
+  }
+}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-card">
+            <h3>🌐 Base URL</h3>
+            <div class="code-block">
+                {{ api_url }}
+            </div>
+        </div>
+
+        <div class="info-card">
+            <h3>📚 Available Resources</h3>
+            <ul style="line-height: 1.8;">
+                <li><strong>Accounts:</strong> Manage hosting accounts (create, suspend, delete)</li>
+                <li><strong>Packages:</strong> Manage hosting packages and quotas</li>
+                <li><strong>Domains:</strong> Manage addon domains, subdomains, and parked domains</li>
+                <li><strong>Email:</strong> Manage email accounts and forwarders (coming soon)</li>
+                <li><strong>Databases:</strong> Manage MySQL databases and users (coming soon)</li>
+                <li><strong>SSL:</strong> Manage SSL certificates (coming soon)</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Swagger UI Container -->
+    <div id="swagger-ui"></div>
+
+    <!-- Swagger UI Bundle -->
+    <script src="https://unpkg.com/swagger-ui-dist@5.10.0/swagger-ui-bundle.js"></script>
+    <script src="https://unpkg.com/swagger-ui-dist@5.10.0/swagger-ui-standalone-preset.js"></script>
+    <script>
+        window.onload = function() {
+            const ui = SwaggerUIBundle({
+                url: "{{ api_url }}/openapi.json",
+                dom_id: '#swagger-ui',
+                deepLinking: true,
+                presets: [
+                    SwaggerUIBundle.presets.apis,
+                    SwaggerUIStandalonePreset
+                ],
+                plugins: [
+                    SwaggerUIBundle.plugins.DownloadUrl
+                ],
+                layout: "BaseLayout",
+                defaultModelsExpandDepth: 1,
+                defaultModelExpandDepth: 1,
+                docExpansion: "list",
+                filter: true,
+                tryItOutEnabled: true,
+            });
+
+            window.ui = ui;
+        };
+    </script>
+</body>
+</html>

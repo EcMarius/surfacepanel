@@ -1,0 +1,193 @@
+{% extends "layouts/admin.html.twig" %}
+
+{% block title %}API Tokens - VirPanel{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-800">API Tokens</h1>
+        <p class="text-gray-600 mt-2">Manage API tokens for programmatic access to VirPanel</p>
+    </div>
+
+    <!-- Success/Error Messages -->
+    {% if session_has('success') %}
+    <div class="bg-green-50 border-l-4 border-green-400 p-4 mb-6">
+        <p class="text-green-700">{{ session_get('success') }}</p>
+    </div>
+    {% endif %}
+
+    {% if session_has('error') %}
+    <div class="bg-red-50 border-l-4 border-red-400 p-4 mb-6">
+        <p class="text-red-700">{{ session_get('error') }}</p>
+    </div>
+    {% endif %}
+
+    <!-- API Documentation Card -->
+    <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
+        <div class="flex items-start">
+            <svg class="w-6 h-6 text-blue-500 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <div>
+                <h3 class="text-lg font-semibold text-blue-900 mb-2">API Documentation</h3>
+                <p class="text-blue-800 mb-3">
+                    Access the VirPanel API at <code class="bg-blue-100 px-2 py-1 rounded">{{ app_url }}/api/v1</code>
+                </p>
+                <p class="text-blue-700 text-sm">
+                    Use your API token in the <code class="bg-blue-100 px-1.5 py-0.5 rounded">Authorization: Bearer {token}</code> header for authenticated requests.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Token Form -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+        <h2 class="text-xl font-semibold mb-4">Create New API Token</h2>
+
+        <form method="POST" action="/api/v1/auth/tokens" class="space-y-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Token Name *
+                    </label>
+                    <input
+                        type="text"
+                        name="name"
+                        required
+                        placeholder="e.g., Production Server"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Expires In (Days)
+                    </label>
+                    <select
+                        name="expires_in_days"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                        <option value="0">Never</option>
+                        <option value="7">7 days</option>
+                        <option value="30" selected>30 days</option>
+                        <option value="90">90 days</option>
+                        <option value="365">1 year</option>
+                    </select>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Permissions (Optional)
+                </label>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <label class="flex items-center">
+                        <input type="checkbox" name="permissions[]" value="accounts.read" class="mr-2">
+                        <span class="text-sm">Read Accounts</span>
+                    </label>
+                    <label class="flex items-center">
+                        <input type="checkbox" name="permissions[]" value="accounts.write" class="mr-2">
+                        <span class="text-sm">Write Accounts</span>
+                    </label>
+                    <label class="flex items-center">
+                        <input type="checkbox" name="permissions[]" value="domains.read" class="mr-2">
+                        <span class="text-sm">Read Domains</span>
+                    </label>
+                    <label class="flex items-center">
+                        <input type="checkbox" name="permissions[]" value="domains.write" class="mr-2">
+                        <span class="text-sm">Write Domains</span>
+                    </label>
+                </div>
+                <p class="text-xs text-gray-500 mt-2">Leave unchecked for full access</p>
+            </div>
+
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition">
+                Create Token
+            </button>
+        </form>
+    </div>
+
+    <!-- Existing Tokens -->
+    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-xl font-semibold">Your API Tokens</h2>
+        </div>
+
+        {% if tokens is empty %}
+        <div class="p-8 text-center text-gray-500">
+            <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
+            </svg>
+            <p>No API tokens created yet</p>
+        </div>
+        {% else %}
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Token</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Permissions</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Used</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expires</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for token in tokens %}
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-medium text-gray-900">{{ token.name }}</div>
+                            <div class="text-xs text-gray-500">Created {{ token.created_at|date('M d, Y') }}</div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <code class="text-xs bg-gray-100 px-2 py-1 rounded">{{ token.token[:20] }}...</code>
+                        </td>
+                        <td class="px-6 py-4">
+                            {% if token.permissions is empty %}
+                            <span class="text-xs text-gray-500">Full Access</span>
+                            {% else %}
+                            <span class="text-xs text-blue-600">{{ token.permissions|length }} permissions</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ token.last_used_at ? token.last_used_at|date('M d, Y') : 'Never' }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ token.expires_at ? token.expires_at|date('M d, Y') : 'Never' }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            {% if token.status == 'active' %}
+                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Active</span>
+                            {% else %}
+                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Revoked</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <div class="flex space-x-2">
+                                {% if token.status == 'active' %}
+                                <form method="POST" action="/api/v1/auth/tokens/{{ token.id }}/revoke" class="inline" onsubmit="return confirm('Revoke this token?')">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="text-yellow-600 hover:text-yellow-900">Revoke</button>
+                                </form>
+                                {% endif %}
+                                <form method="POST" action="/api/v1/auth/tokens/{{ token.id }}/delete" class="inline" onsubmit="return confirm('Permanently delete this token?')">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <input type="hidden" name="_method" value="DELETE">
+                                    <button type="submit" class="text-red-600 hover:text-red-900">Delete</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

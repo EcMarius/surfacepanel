@@ -103,6 +103,31 @@ return function (WebRouter $router) {
     $router->post('/admin/ip-addresses/assign', [IPAddressController::class, 'assignToAccount'], [AuthenticateMiddleware::class]);
     $router->post('/admin/accounts/{id}/remove-ip', [IPAddressController::class, 'removeFromAccount'], [AuthenticateMiddleware::class]);
 
+    // API Management (Admin) - Web UI for token management
+    $router->get('/admin/api/tokens', function($request) {
+        $app = \VirPanel\Core\Application::getInstance();
+        $db = $app->get('database');
+        $prefix = config('database.prefix', 'vp_');
+        $template = new \VirPanel\Core\Template\TemplateEngine($app);
+
+        $user = \VirPanel\Core\Auth\Auth::user();
+
+        $tokens = $db->fetchAllAssociative(
+            "SELECT * FROM {$prefix}api_tokens WHERE user_id = ? ORDER BY created_at DESC",
+            [$user->getId()]
+        );
+
+        // Parse permissions JSON
+        foreach ($tokens as &$token) {
+            $token['permissions'] = json_decode($token['permissions'] ?? '[]', true);
+        }
+
+        return new \Symfony\Component\HttpFoundation\Response($template->render('admin/api/tokens.html.twig', [
+            'tokens' => $tokens,
+            'app_url' => config('app.url', 'http://localhost'),
+        ]));
+    }, [AuthenticateMiddleware::class]);
+
     // Module Management
     $router->get('/admin/modules', [ModuleController::class, 'index'], [AuthenticateMiddleware::class]);
     $router->post('/admin/modules/upload', [ModuleController::class, 'upload'], [AuthenticateMiddleware::class]);

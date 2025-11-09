@@ -32,8 +32,12 @@ $app->getContainer()->set('template', function() use ($app) {
 
 // Load web routes
 $router = new WebRouter();
-$routeConfig = require __DIR__ . '/../config/web/routes.php';
-$routeConfig($router);
+$webRoutesConfig = require __DIR__ . '/../config/web/routes.php';
+$webRoutesConfig($router);
+
+// Load API routes
+$apiRoutesConfig = require __DIR__ . '/../config/api/routes.php';
+$apiRoutesConfig($router);
 
 // Handle request
 try {
