@@ -1,0 +1,117 @@
+{% extends "layouts/user.html.twig" %}
+
+{% block title %}Application Installer{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">Application Installer</h1>
+        <p class="text-gray-600">Install popular web applications with one click</p>
+    </div>
+
+    <!-- Installed Applications -->
+    {% if installed_apps|length > 0 %}
+    <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">Installed Applications</h2>
+        <div class="grid grid-cols-1 gap-4">
+            {% for app in installed_apps %}
+            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div class="flex-1">
+                    <h3 class="font-semibold text-gray-900">{{ app.app_name|title }}</h3>
+                    <p class="text-sm text-gray-600">{{ app.domain }}{{ app.directory ? '/' ~ app.directory : '' }}</p>
+                    <p class="text-xs text-gray-500">Installed: {{ app.installed_at|date('M d, Y') }}</p>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <a href="{{ app.admin_url }}" target="_blank"
+                       class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">
+                        Admin Panel
+                    </a>
+                    <button onclick="uninstallApp({{ app.id }})"
+                            class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm">
+                        Uninstall
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Available Applications by Category -->
+    {% for category, apps in apps_by_category %}
+    <div class="mb-8">
+        <h2 class="text-2xl font-bold text-gray-900 mb-4">{{ category }}</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for app_id, app in apps %}
+            <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition p-6">
+                <div class="flex items-start justify-between mb-4">
+                    <div class="flex-1">
+                        <h3 class="text-lg font-semibold text-gray-900">{{ app.name }}</h3>
+                        <p class="text-sm text-gray-500">Version {{ app.version }}</p>
+                    </div>
+                    {% if app.category == 'CMS' %}
+                    <svg class="w-12 h-12 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    {% elseif app.category == 'E-Commerce' %}
+                    <svg class="w-12 h-12 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                    {% elseif app.category == 'Development' %}
+                    <svg class="w-12 h-12 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                    </svg>
+                    {% else %}
+                    <svg class="w-12 h-12 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    {% endif %}
+                </div>
+                <p class="text-gray-700 text-sm mb-4">{{ app.description }}</p>
+                <div class="flex flex-wrap gap-2 mb-4">
+                    {% for req_name, req_version in app.requires %}
+                    <span class="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded">
+                        {{ req_name|upper }} {{ req_version }}+
+                    </span>
+                    {% endfor %}
+                </div>
+                <a href="/user/apps/install/{{ app_id }}"
+                   class="block w-full text-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                    Install Now
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+function uninstallApp(id) {
+    if (!confirm('Are you sure you want to uninstall this application? This will delete all files and data.')) {
+        return;
+    }
+
+    fetch(`/user/apps/${id}/uninstall`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('Error uninstalling application');
+        console.error(error);
+    });
+}
+</script>
+{% endblock %}

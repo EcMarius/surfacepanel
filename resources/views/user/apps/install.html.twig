@@ -1,0 +1,207 @@
+{% extends "layouts/user.html.twig" %}
+
+{% block title %}Install {{ app.name }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8 max-w-3xl">
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">Install {{ app.name }}</h1>
+        <p class="text-gray-600">{{ app.description }}</p>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-md p-8">
+        <form id="installForm" onsubmit="installApp(event)">
+            <!-- Domain Selection -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Domain *</label>
+                <select name="domain" required
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    {% for domain in domains %}
+                    <option value="{{ domain }}">{{ domain }}</option>
+                    {% endfor %}
+                </select>
+                <p class="text-xs text-gray-500 mt-1">Select the domain where you want to install {{ app.name }}</p>
+            </div>
+
+            <!-- Directory -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Directory (optional)</label>
+                <input type="text" name="directory" placeholder="e.g., blog"
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                <p class="text-xs text-gray-500 mt-1">Leave empty to install in root directory, or specify a subdirectory</p>
+            </div>
+
+            <!-- Site Name -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Site Name *</label>
+                <input type="text" name="site_name" required placeholder="My Awesome Site"
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <!-- Admin Username -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Admin Username *</label>
+                <input type="text" name="admin_username" required placeholder="admin"
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <!-- Admin Password -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Admin Password *</label>
+                <input type="password" name="admin_password" required
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                <p class="text-xs text-gray-500 mt-1">Use a strong password for security</p>
+            </div>
+
+            <!-- Admin Email -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Admin Email *</label>
+                <input type="email" name="admin_email" required
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <!-- Database Configuration -->
+            {% if app.requires.mysql is defined or app.requires is not defined or app.category != 'Development' %}
+            <div class="border-t border-gray-200 pt-6 mb-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Database Configuration</h3>
+
+                <!-- Create New Database -->
+                <div class="mb-4">
+                    <label class="flex items-center">
+                        <input type="radio" name="create_database" value="yes" checked
+                               class="mr-2" onchange="toggleDatabaseFields()">
+                        <span class="text-sm font-medium text-gray-700">Create new database</span>
+                    </label>
+                </div>
+
+                <div id="newDatabaseFields" class="ml-6 space-y-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Database Name *</label>
+                        <input type="text" name="database_name" required
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Database User *</label>
+                        <input type="text" name="database_user" required
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Database Password *</label>
+                        <input type="password" name="database_password" required
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+
+                <!-- Use Existing Database -->
+                <div class="mb-4">
+                    <label class="flex items-center">
+                        <input type="radio" name="create_database" value="no"
+                               class="mr-2" onchange="toggleDatabaseFields()">
+                        <span class="text-sm font-medium text-gray-700">Use existing database</span>
+                    </label>
+                </div>
+
+                <div id="existingDatabaseFields" class="ml-6 space-y-4 hidden">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Select Database</label>
+                        <select name="existing_database"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            {% for db in databases %}
+                            <option value="{{ db.database_name }}">{{ db.database_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Node.js Specific Options -->
+            {% if app.category == 'Development' %}
+            <div class="border-t border-gray-200 pt-6 mb-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Node.js Configuration</h3>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Port</label>
+                    <input type="number" name="port" value="3000" min="3000" max="9999"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    <p class="text-xs text-gray-500 mt-1">Port for Node.js application (will be proxied through Nginx)</p>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Installation Progress -->
+            <div id="installProgress" class="hidden mb-6">
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div class="flex items-center mb-2">
+                        <svg class="animate-spin h-5 w-5 text-blue-600 mr-2" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span class="font-medium text-blue-900">Installing {{ app.name }}...</span>
+                    </div>
+                    <p class="text-sm text-blue-700">This may take a few minutes. Please do not close this page.</p>
+                </div>
+            </div>
+
+            <!-- Buttons -->
+            <div class="flex space-x-4">
+                <button type="submit" id="installButton"
+                        class="flex-1 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition">
+                    Install {{ app.name }}
+                </button>
+                <a href="/user/apps"
+                   class="flex-1 text-center px-6 py-3 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function toggleDatabaseFields() {
+    const createNew = document.querySelector('input[name="create_database"][value="yes"]').checked;
+    document.getElementById('newDatabaseFields').classList.toggle('hidden', !createNew);
+    document.getElementById('existingDatabaseFields').classList.toggle('hidden', createNew);
+}
+
+function installApp(event) {
+    event.preventDefault();
+
+    const form = event.target;
+    const formData = new FormData(form);
+
+    // Show progress
+    document.getElementById('installProgress').classList.remove('hidden');
+    document.getElementById('installButton').disabled = true;
+    document.getElementById('installButton').textContent = 'Installing...';
+
+    fetch('/user/apps/install/{{ app_id }}', {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            window.location.href = data.url;
+        } else {
+            alert('Error: ' + data.error);
+            document.getElementById('installProgress').classList.add('hidden');
+            document.getElementById('installButton').disabled = false;
+            document.getElementById('installButton').textContent = 'Install {{ app.name }}';
+        }
+    })
+    .catch(error => {
+        alert('Error installing application');
+        console.error(error);
+        document.getElementById('installProgress').classList.add('hidden');
+        document.getElementById('installButton').disabled = false;
+        document.getElementById('installButton').textContent = 'Install {{ app.name }}';
+    });
+}
+</script>
+{% endblock %}

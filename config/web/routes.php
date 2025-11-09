@@ -27,6 +27,7 @@ use VirPanel\Core\Http\Controllers\FTPController;
 use VirPanel\Core\Http\Controllers\CronController;
 use VirPanel\Core\Http\Controllers\BackupController;
 use VirPanel\Core\Http\Controllers\StatisticsController;
+use VirPanel\Core\Http\Controllers\ApplicationInstallerController;
 use VirPanel\Core\Http\Middleware\GuestMiddleware;
 use VirPanel\Core\Http\Middleware\AuthenticateMiddleware;
 use VirPanel\Core\Http\Middleware\CsrfMiddleware;
@@ -228,6 +229,12 @@ return function (WebRouter $router) {
 
     // Website Statistics (User)
     $router->get('/user/statistics', [StatisticsController::class, 'index'], [AuthenticateMiddleware::class]);
+
+    // Application Installer (User)
+    $router->get('/user/apps', [ApplicationInstallerController::class, 'index'], [AuthenticateMiddleware::class]);
+    $router->get('/user/apps/install/{app}', [ApplicationInstallerController::class, 'showInstall'], [AuthenticateMiddleware::class]);
+    $router->post('/user/apps/install/{app}', [ApplicationInstallerController::class, 'install'], [AuthenticateMiddleware::class]);
+    $router->post('/user/apps/{id}/uninstall', [ApplicationInstallerController::class, 'uninstall'], [AuthenticateMiddleware::class]);
 
     // Redirect root to appropriate dashboard
     $router->get('/', function($request) {
