@@ -1,0 +1,149 @@
+{% extends 'layouts/user.html.twig' %}
+
+{% block title %}Choose Your Theme{% endblock %}
+
+{% block content %}
+<div class="px-4 sm:px-6 lg:px-8">
+    <div class="sm:flex sm:items-center">
+        <div class="sm:flex-auto">
+            <h1 class="text-2xl font-semibold text-gray-900">Choose Your Theme</h1>
+            <p class="mt-2 text-sm text-gray-700">Personalize your VirPanel experience with a theme that suits your style</p>
+        </div>
+        <div class="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
+            <a href="/user/dashboard" class="block rounded-md bg-white px-3 py-2 text-center text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+                Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    {% if app.session.get('success') %}
+    <div class="mt-4 rounded-md bg-green-50 p-4">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" />
+                </svg>
+            </div>
+            <div class="ml-3">
+                <p class="text-sm font-medium text-green-800">{{ app.session.get('success') }}</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if app.session.get('error') %}
+    <div class="mt-4 rounded-md bg-red-50 p-4">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" />
+                </svg>
+            </div>
+            <div class="ml-3">
+                <p class="text-sm font-medium text-red-800">{{ app.session.get('error') }}</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Templates Grid -->
+    <div class="mt-8">
+        {% if templates %}
+        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {% for key, template in templates %}
+            <div class="relative overflow-hidden bg-white shadow sm:rounded-lg hover:shadow-lg transition-shadow {{ key == activeTemplate ? 'ring-2 ring-blue-500' : '' }}">
+                <!-- Preview Image -->
+                <div class="aspect-video bg-gradient-to-br from-blue-50 to-purple-50 relative group cursor-pointer">
+                    {% if template.preview_image %}
+                        <img src="{{ template.preview_image }}" alt="{{ template.display_name ?? template.name }}" class="w-full h-full object-cover">
+                    {% else %}
+                        <div class="flex items-center justify-center h-full">
+                            <svg class="h-16 w-16 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
+                            </svg>
+                        </div>
+                    {% endif %}
+
+                    <!-- Active Badge -->
+                    {% if key == activeTemplate %}
+                    <div class="absolute top-2 right-2">
+                        <span class="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-800 shadow-sm">
+                            <svg class="-ml-0.5 mr-1.5 h-2 w-2 fill-blue-500" viewBox="0 0 6 6">
+                                <circle cx="3" cy="3" r="3" />
+                            </svg>
+                            Current Theme
+                        </span>
+                    </div>
+                    {% endif %}
+
+                    <!-- Hover Overlay -->
+                    <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all flex items-center justify-center">
+                        <span class="text-white font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
+                            Preview
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Template Info -->
+                <div class="px-4 py-5 sm:p-6">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-medium text-gray-900">{{ template.display_name ?? template.name }}</h3>
+                        <span class="inline-flex rounded-full bg-gray-100 px-2 py-1 text-xs font-semibold text-gray-800">
+                            v{{ template.version }}
+                        </span>
+                    </div>
+
+                    <p class="mt-2 text-sm text-gray-600 line-clamp-2">{{ template.description | default('No description available') }}</p>
+
+                    {% if template.author %}
+                    <p class="mt-2 text-xs text-gray-500">By {{ template.author }}</p>
+                    {% endif %}
+
+                    <!-- Action -->
+                    <div class="mt-4">
+                        {% if key != activeTemplate %}
+                        <form action="/user/templates/{{ key }}/select" method="POST">
+                            {{ csrf_field() | raw }}
+                            <button type="submit" class="w-full rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">
+                                Use This Theme
+                            </button>
+                        </form>
+                        {% else %}
+                        <button disabled class="w-full rounded-md bg-gray-300 px-3 py-2 text-sm font-semibold text-gray-500 cursor-not-allowed">
+                            Current Theme
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-12">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-gray-900">No themes available</h3>
+            <p class="mt-1 text-sm text-gray-500">Contact your administrator to install themes</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Theme Info -->
+    <div class="mt-12 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6">
+        <div class="flex items-start">
+            <div class="flex-shrink-0">
+                <svg class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" />
+                </svg>
+            </div>
+            <div class="ml-3 flex-1">
+                <h3 class="text-sm font-medium text-gray-900">Personalize Your Experience</h3>
+                <p class="mt-1 text-sm text-gray-700">
+                    Choose a theme that matches your style. Your selection will be applied immediately and saved for future sessions.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,231 @@
+{% extends 'layouts/admin.html.twig' %}
+
+{% block title %}Template Management{% endblock %}
+
+{% block content %}
+<div class="px-4 sm:px-6 lg:px-8" x-data="templateManager()">
+    <div class="sm:flex sm:items-center">
+        <div class="sm:flex-auto">
+            <h1 class="text-2xl font-semibold text-gray-900">Templates & Themes</h1>
+            <p class="mt-2 text-sm text-gray-700">Manage and customize the appearance of VirPanel</p>
+        </div>
+        <div class="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
+            <button @click="showUpload = true" class="block rounded-md bg-blue-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-blue-500">
+                Upload Template
+            </button>
+        </div>
+    </div>
+
+    {% if app.session.get('success') %}
+    <div class="mt-4 rounded-md bg-green-50 p-4">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" />
+                </svg>
+            </div>
+            <div class="ml-3">
+                <p class="text-sm font-medium text-green-800">{{ app.session.get('success') }}</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if app.session.get('error') %}
+    <div class="mt-4 rounded-md bg-red-50 p-4">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" />
+                </svg>
+            </div>
+            <div class="ml-3">
+                <p class="text-sm font-medium text-red-800">{{ app.session.get('error') }}</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Upload Modal -->
+    <div x-show="showUpload" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
+        <div class="flex min-h-screen items-end justify-center px-4 pb-20 pt-4 text-center sm:block sm:p-0">
+            <div @click="showUpload = false" class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
+            <div class="inline-block align-bottom bg-white rounded-lg px-4 pb-4 pt-5 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
+                <form action="/admin/templates/upload" method="POST" enctype="multipart/form-data">
+                    {{ csrf_field() | raw }}
+                    <div>
+                        <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
+                            <svg class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
+                            </svg>
+                        </div>
+                        <div class="mt-3 text-center sm:mt-5">
+                            <h3 class="text-lg font-medium leading-6 text-gray-900">Upload Template</h3>
+                            <div class="mt-4">
+                                <div class="flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+                                    <div class="space-y-1 text-center">
+                                        <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                                            <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                        </svg>
+                                        <div class="flex text-sm text-gray-600">
+                                            <label for="template_file" class="relative cursor-pointer rounded-md bg-white font-medium text-blue-600 hover:text-blue-500">
+                                                <span>Upload a file</span>
+                                                <input id="template_file" name="template_file" type="file" accept=".zip" required class="sr-only">
+                                            </label>
+                                            <p class="pl-1">or drag and drop</p>
+                                        </div>
+                                        <p class="text-xs text-gray-500">ZIP files up to 50MB</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-5 sm:mt-6 sm:grid sm:grid-flow-row-dense sm:grid-cols-2 sm:gap-3">
+                        <button type="submit" class="inline-flex w-full justify-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 sm:col-start-2">
+                            Upload & Install
+                        </button>
+                        <button @click="showUpload = false" type="button" class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:col-start-1 sm:mt-0">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Templates Grid -->
+    <div class="mt-8">
+        {% if templates %}
+        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {% for key, template in templates %}
+            <div class="relative overflow-hidden bg-white shadow sm:rounded-lg hover:shadow-lg transition-shadow">
+                <!-- Preview Image -->
+                <div class="aspect-video bg-gradient-to-br from-blue-50 to-purple-50 relative">
+                    {% if template.preview_image %}
+                        <img src="{{ template.preview_image }}" alt="{{ template.display_name ?? template.name }}" class="w-full h-full object-cover">
+                    {% else %}
+                        <div class="flex items-center justify-center h-full">
+                            <svg class="h-16 w-16 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
+                            </svg>
+                        </div>
+                    {% endif %}
+
+                    <!-- Active Badge -->
+                    {% if key == activeTemplate %}
+                    <div class="absolute top-2 right-2">
+                        <span class="inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-800">
+                            <svg class="-ml-0.5 mr-1.5 h-2 w-2 fill-green-500" viewBox="0 0 6 6">
+                                <circle cx="3" cy="3" r="3" />
+                            </svg>
+                            Active
+                        </span>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Template Info -->
+                <div class="px-4 py-5 sm:p-6">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-medium text-gray-900">{{ template.display_name ?? template.name }}</h3>
+                        <span class="inline-flex rounded-full bg-gray-100 px-2 py-1 text-xs font-semibold text-gray-800">
+                            v{{ template.version }}
+                        </span>
+                    </div>
+
+                    <p class="mt-2 text-sm text-gray-600 line-clamp-2">{{ template.description | default('No description available') }}</p>
+
+                    {% if template.author %}
+                    <p class="mt-2 text-xs text-gray-500">By {{ template.author }}</p>
+                    {% endif %}
+
+                    <!-- Type Badge -->
+                    <div class="mt-3">
+                        {% if template.type == 'admin' %}
+                            <span class="inline-flex rounded-full bg-purple-100 px-2 py-1 text-xs font-semibold text-purple-800">Admin Only</span>
+                        {% elseif template.type == 'user' %}
+                            <span class="inline-flex rounded-full bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-800">User Only</span>
+                        {% else %}
+                            <span class="inline-flex rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800">Admin & User</span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="mt-4 flex gap-2">
+                        {% if key != activeTemplate %}
+                        <form action="/admin/templates/{{ key }}/activate" method="POST" class="flex-1">
+                            {{ csrf_field() | raw }}
+                            <input type="hidden" name="type" value="{{ templateType }}">
+                            <button type="submit" class="w-full rounded-md bg-blue-600 px-3 py-2 text-xs font-semibold text-white shadow-sm hover:bg-blue-500">
+                                Activate
+                            </button>
+                        </form>
+                        {% else %}
+                        <button disabled class="flex-1 rounded-md bg-gray-300 px-3 py-2 text-xs font-semibold text-gray-500 cursor-not-allowed">
+                            Active
+                        </button>
+                        {% endif %}
+
+                        {% if key != activeTemplate %}
+                        <form action="/admin/templates/{{ key }}/uninstall" method="POST" onsubmit="return confirm('Are you sure you want to uninstall this template?');">
+                            {{ csrf_field() | raw }}
+                            <button type="submit" class="rounded-md bg-red-600 px-3 py-2 text-xs font-semibold text-white shadow-sm hover:bg-red-500">
+                                Uninstall
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-12">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-gray-900">No templates installed</h3>
+            <p class="mt-1 text-sm text-gray-500">Get started by uploading a template package</p>
+            <div class="mt-6">
+                <button @click="showUpload = true" class="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500">
+                    <svg class="-ml-0.5 mr-1.5 h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" />
+                    </svg>
+                    Upload Template
+                </button>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Template Development Guide -->
+    <div class="mt-12 bg-blue-50 rounded-lg p-6">
+        <h3 class="text-lg font-medium text-blue-900">Template Development</h3>
+        <p class="mt-2 text-sm text-blue-700">
+            Create custom themes for VirPanel. Templates are packaged as ZIP files containing a theme.json manifest and template files.
+        </p>
+        <div class="mt-4">
+            <details class="text-sm text-blue-700">
+                <summary class="cursor-pointer font-medium">View theme.json example</summary>
+                <pre class="mt-2 bg-blue-100 rounded p-3 overflow-x-auto"><code>{
+  "name": "my-theme",
+  "display_name": "My Awesome Theme",
+  "version": "1.0.0",
+  "description": "A beautiful theme for VirPanel",
+  "author": "Your Name",
+  "type": "both",
+  "preview_image": "preview.png"
+}</code></pre>
+            </details>
+        </div>
+    </div>
+</div>
+
+<script>
+function templateManager() {
+    return {
+        showUpload: false
+    }
+}
+</script>
+{% endblock %}

@@ -15,6 +15,7 @@ use VirPanel\Core\Http\Controllers\CloudflareController;
 use VirPanel\Core\Http\Controllers\FileManagerController;
 use VirPanel\Core\Http\Controllers\ResellerController;
 use VirPanel\Core\Http\Controllers\ModuleController;
+use VirPanel\Core\Http\Controllers\TemplateController;
 use VirPanel\Core\Http\Middleware\GuestMiddleware;
 use VirPanel\Core\Http\Middleware\AuthenticateMiddleware;
 use VirPanel\Core\Http\Middleware\CsrfMiddleware;
@@ -94,6 +95,17 @@ return function (WebRouter $router) {
     $router->post('/admin/modules/{name}/disable', [ModuleController::class, 'disable'], [AuthenticateMiddleware::class]);
     $router->post('/admin/modules/{name}/uninstall', [ModuleController::class, 'uninstall'], [AuthenticateMiddleware::class]);
     $router->get('/admin/modules/{name}/details', [ModuleController::class, 'details'], [AuthenticateMiddleware::class]);
+
+    // Template Management (Admin)
+    $router->get('/admin/templates', [TemplateController::class, 'adminIndex'], [AuthenticateMiddleware::class]);
+    $router->post('/admin/templates/upload', [TemplateController::class, 'upload'], [AuthenticateMiddleware::class]);
+    $router->post('/admin/templates/{name}/activate', [TemplateController::class, 'activate'], [AuthenticateMiddleware::class]);
+    $router->post('/admin/templates/{name}/uninstall', [TemplateController::class, 'uninstall'], [AuthenticateMiddleware::class]);
+    $router->get('/admin/templates/{name}/preview', [TemplateController::class, 'preview'], [AuthenticateMiddleware::class]);
+
+    // Template Selection (User)
+    $router->get('/user/templates', [TemplateController::class, 'userIndex'], [AuthenticateMiddleware::class]);
+    $router->post('/user/templates/{name}/select', [TemplateController::class, 'setUserTemplate'], [AuthenticateMiddleware::class]);
 
     // Redirect root to appropriate dashboard
     $router->get('/', function($request) {
