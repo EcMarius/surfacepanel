@@ -1,0 +1,275 @@
+{% extends "layouts/user.html.twig" %}
+
+{% block title %}FTP Accounts - VirPanel{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-800">FTP Accounts</h1>
+        <p class="text-gray-600 mt-2">Manage FTP accounts for file transfer access</p>
+    </div>
+
+    <!-- Success/Error Messages -->
+    {% if session_has('success') %}
+    <div class="bg-green-50 border-l-4 border-green-400 p-4 mb-6">
+        <p class="text-green-700">{{ session_get('success') }}</p>
+    </div>
+    {% endif %}
+
+    {% if session_has('error') %}
+    <div class="bg-red-50 border-l-4 border-red-400 p-4 mb-6">
+        <p class="text-red-700">{{ session_get('error') }}</p>
+    </div>
+    {% endif %}
+
+    <!-- FTP Account Limit Info -->
+    <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
+        <div class="flex items-start justify-between">
+            <div class="flex items-start">
+                <svg class="w-6 h-6 text-blue-500 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <div>
+                    <h3 class="text-lg font-semibold text-blue-900 mb-2">FTP Account Usage</h3>
+                    <p class="text-blue-800">
+                        You are using <strong>{{ current_count }}</strong> of
+                        {% if ftp_limit == -1 %}
+                        <strong>Unlimited</strong>
+                        {% else %}
+                        <strong>{{ ftp_limit }}</strong>
+                        {% endif %}
+                        FTP accounts
+                    </p>
+                </div>
+            </div>
+            <div class="text-right">
+                {% if ftp_limit != -1 %}
+                <div class="text-2xl font-bold text-blue-600">
+                    {{ ((current_count / ftp_limit) * 100)|round }}%
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Create FTP Account Form -->
+    {% if can_create %}
+    <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+        <h2 class="text-xl font-semibold mb-4">Create FTP Account</h2>
+
+        <form method="POST" action="/user/ftp/create" class="space-y-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Username *
+                    </label>
+                    <div class="flex">
+                        <span class="inline-flex items-center px-3 text-sm text-gray-900 bg-gray-200 border border-r-0 border-gray-300 rounded-l-md">
+                            {{ account.username }}_
+                        </span>
+                        <input
+                            type="text"
+                            name="username"
+                            required
+                            pattern="[a-z0-9_]{3,16}"
+                            placeholder="ftpuser"
+                            class="flex-1 px-4 py-2 border border-gray-300 rounded-r-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">3-16 characters (a-z, 0-9, _)</p>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Password *
+                    </label>
+                    <input
+                        type="password"
+                        name="password"
+                        required
+                        minlength="8"
+                        placeholder="Minimum 8 characters"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Directory
+                    </label>
+                    <input
+                        type="text"
+                        name="directory"
+                        value="/public_html"
+                        placeholder="/public_html"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                    <p class="text-xs text-gray-500 mt-1">Default: /public_html</p>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Quota (MB)
+                    </label>
+                    <input
+                        type="number"
+                        name="quota"
+                        value="0"
+                        min="0"
+                        placeholder="0 = Unlimited"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                    <p class="text-xs text-gray-500 mt-1">0 = Unlimited</p>
+                </div>
+            </div>
+
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition">
+                Create FTP Account
+            </button>
+        </form>
+    </div>
+    {% else %}
+    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-8">
+        <p class="text-yellow-700">You have reached your FTP account limit. Please upgrade your package to create more FTP accounts.</p>
+    </div>
+    {% endif %}
+
+    <!-- FTP Accounts List -->
+    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-xl font-semibold">Your FTP Accounts</h2>
+        </div>
+
+        {% if ftp_accounts is empty %}
+        <div class="p-8 text-center text-gray-500">
+            <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
+            </svg>
+            <p>No FTP accounts created yet</p>
+            <p class="text-sm mt-2">Create an FTP account to access your files via FTP</p>
+        </div>
+        {% else %}
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Username</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Directory</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quota</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for ftp in ftp_accounts %}
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div>
+                                <div class="text-sm font-medium text-gray-900">{{ ftp.username }}</div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="text-sm font-mono text-gray-600">{{ ftp.home_directory }}</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {% if ftp.quota == 0 %}
+                            Unlimited
+                            {% else %}
+                            {{ ftp.quota }} MB
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            {% if ftp.status == 'active' %}
+                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Active</span>
+                            {% else %}
+                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ ftp.created_at|date('M d, Y') }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <div class="flex space-x-3" x-data="{ showPasswordModal: false, showQuotaModal: false }">
+                                <!-- Change Password -->
+                                <button @click="showPasswordModal = true" class="text-blue-600 hover:text-blue-900">Password</button>
+
+                                <!-- Change Quota -->
+                                <button @click="showQuotaModal = true" class="text-indigo-600 hover:text-indigo-900">Quota</button>
+
+                                <!-- Delete -->
+                                <form method="POST" action="/user/ftp/{{ ftp.id }}/delete" class="inline" onsubmit="return confirm('Delete this FTP account?')">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="text-red-600 hover:text-red-900">Delete</button>
+                                </form>
+
+                                <!-- Password Modal -->
+                                <div x-show="showPasswordModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" @click.self="showPasswordModal = false">
+                                    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                                        <h3 class="text-lg font-medium mb-4">Change Password</h3>
+                                        <form method="POST" action="/user/ftp/{{ ftp.id }}/password">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <div class="mb-4">
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">New Password</label>
+                                                <input type="password" name="password" required minlength="8" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                                            </div>
+                                            <div class="flex justify-end space-x-3">
+                                                <button type="button" @click="showPasswordModal = false" class="px-4 py-2 bg-gray-200 rounded-lg">Cancel</button>
+                                                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg">Update</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+
+                                <!-- Quota Modal -->
+                                <div x-show="showQuotaModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" @click.self="showQuotaModal = false">
+                                    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                                        <h3 class="text-lg font-medium mb-4">Change Quota</h3>
+                                        <form method="POST" action="/user/ftp/{{ ftp.id }}/quota">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <div class="mb-4">
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">Quota (MB)</label>
+                                                <input type="number" name="quota" value="{{ ftp.quota }}" min="0" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                                                <p class="text-xs text-gray-500 mt-1">0 = Unlimited</p>
+                                            </div>
+                                            <div class="flex justify-end space-x-3">
+                                                <button type="button" @click="showQuotaModal = false" class="px-4 py-2 bg-gray-200 rounded-lg">Cancel</button>
+                                                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg">Update</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- FTP Connection Info -->
+    <div class="mt-8 bg-gray-50 rounded-lg p-6">
+        <h3 class="text-lg font-semibold mb-4">FTP Connection Information</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div>
+                <strong class="text-gray-700">FTP Server:</strong>
+                <div class="bg-white rounded px-3 py-2 mt-1 font-mono">ftp.{{ account.domain }}</div>
+            </div>
+            <div>
+                <strong class="text-gray-700">Port:</strong>
+                <div class="bg-white rounded px-3 py-2 mt-1 font-mono">21 (FTP) or 22 (SFTP)</div>
+            </div>
+        </div>
+        <p class="text-xs text-gray-600 mt-4">
+            Use any FTP client (FileZilla, WinSCP, Cyberduck) to connect using your FTP username and password.
+        </p>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+{% endblock %}

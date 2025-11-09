@@ -21,6 +21,8 @@ use VirPanel\Core\Http\Controllers\EmailController;
 use VirPanel\Core\Http\Controllers\DatabaseController;
 use VirPanel\Core\Http\Controllers\SSLController;
 use VirPanel\Core\Http\Controllers\IPAddressController;
+use VirPanel\Core\Http\Controllers\DNSController;
+use VirPanel\Core\Http\Controllers\FTPController;
 use VirPanel\Core\Http\Middleware\GuestMiddleware;
 use VirPanel\Core\Http\Middleware\AuthenticateMiddleware;
 use VirPanel\Core\Http\Middleware\CsrfMiddleware;
@@ -186,6 +188,21 @@ return function (WebRouter $router) {
     $router->post('/user/ssl/csr/generate', [SSLController::class, 'generateCSR'], [AuthenticateMiddleware::class]);
     $router->post('/user/ssl/{id}/renew', [SSLController::class, 'renewCertificate'], [AuthenticateMiddleware::class]);
     $router->post('/user/ssl/{id}/delete', [SSLController::class, 'deleteCertificate'], [AuthenticateMiddleware::class]);
+
+    // DNS Zone Management (User)
+    $router->get('/user/dns', [DNSController::class, 'index'], [AuthenticateMiddleware::class]);
+    $router->post('/user/dns/create', [DNSController::class, 'createZone'], [AuthenticateMiddleware::class]);
+    $router->get('/user/dns/zone/{id}', [DNSController::class, 'viewZone'], [AuthenticateMiddleware::class]);
+    $router->post('/user/dns/zone/{id}/add', [DNSController::class, 'addRecord'], [AuthenticateMiddleware::class]);
+    $router->post('/user/dns/zone/{zoneId}/record/{recordId}/delete', [DNSController::class, 'deleteRecord'], [AuthenticateMiddleware::class]);
+    $router->post('/user/dns/zone/{id}/delete', [DNSController::class, 'deleteZone'], [AuthenticateMiddleware::class]);
+
+    // FTP Account Management (User)
+    $router->get('/user/ftp', [FTPController::class, 'index'], [AuthenticateMiddleware::class]);
+    $router->post('/user/ftp/create', [FTPController::class, 'store'], [AuthenticateMiddleware::class]);
+    $router->post('/user/ftp/{id}/password', [FTPController::class, 'updatePassword'], [AuthenticateMiddleware::class]);
+    $router->post('/user/ftp/{id}/quota', [FTPController::class, 'updateQuota'], [AuthenticateMiddleware::class]);
+    $router->post('/user/ftp/{id}/delete', [FTPController::class, 'delete'], [AuthenticateMiddleware::class]);
 
     // Redirect root to appropriate dashboard
     $router->get('/', function($request) {
