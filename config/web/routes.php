@@ -10,6 +10,7 @@ use VirPanel\Core\Http\WebRouter;
 use VirPanel\Core\Http\Controllers\AuthController;
 use VirPanel\Core\Http\Controllers\AdminDashboardController;
 use VirPanel\Core\Http\Controllers\AccountController;
+use VirPanel\Core\Http\Controllers\PackageController;
 use VirPanel\Core\Http\Middleware\GuestMiddleware;
 use VirPanel\Core\Http\Middleware\AuthenticateMiddleware;
 use VirPanel\Core\Http\Middleware\CsrfMiddleware;
@@ -46,6 +47,14 @@ return function (WebRouter $router) {
     $router->post('/admin/accounts/{id}', [AccountController::class, 'update'], [AuthenticateMiddleware::class]);
     $router->post('/admin/accounts/{id}/suspend', [AccountController::class, 'suspend'], [AuthenticateMiddleware::class]);
     $router->post('/admin/accounts/{id}/unsuspend', [AccountController::class, 'unsuspend'], [AuthenticateMiddleware::class]);
+
+    // Package Management
+    $router->get('/admin/packages', [PackageController::class, 'index'], [AuthenticateMiddleware::class]);
+    $router->get('/admin/packages/create', [PackageController::class, 'create'], [AuthenticateMiddleware::class]);
+    $router->post('/admin/packages', [PackageController::class, 'store'], [AuthenticateMiddleware::class]);
+    $router->get('/admin/packages/{id}', [PackageController::class, 'show'], [AuthenticateMiddleware::class]);
+    $router->get('/admin/packages/{id}/edit', [PackageController::class, 'edit'], [AuthenticateMiddleware::class]);
+    $router->post('/admin/packages/{id}', [PackageController::class, 'update'], [AuthenticateMiddleware::class]);
 
     // Redirect root to appropriate dashboard
     $router->get('/', function($request) {

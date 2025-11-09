@@ -1,0 +1,140 @@
+{% extends 'layouts/admin.html.twig' %}
+
+{% block title %}Create Package{% endblock %}
+
+{% block content %}
+<div class="px-4 sm:px-6 lg:px-8">
+    <div class="sm:flex sm:items-center">
+        <div class="sm:flex-auto">
+            <h1 class="text-2xl font-semibold text-gray-900">Create Package</h1>
+            <p class="mt-2 text-sm text-gray-700">Define a new hosting package with resource limits</p>
+        </div>
+        <div class="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
+            <a href="/admin/packages" class="block rounded-md bg-white px-3 py-2 text-center text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+                Back to Packages
+            </a>
+        </div>
+    </div>
+
+    {% if app.session.get('errors') %}
+    <div class="mt-4 rounded-md bg-red-50 p-4">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" />
+                </svg>
+            </div>
+            <div class="ml-3">
+                <h3 class="text-sm font-medium text-red-800">There were errors with your submission:</h3>
+                <div class="mt-2 text-sm text-red-700">
+                    <ul class="list-disc space-y-1 pl-5">
+                        {% for error in app.session.get('errors') %}
+                        <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="mt-8">
+        <form action="/admin/packages" method="POST" class="space-y-8">
+            <div class="grid grid-cols-1 gap-x-8 gap-y-6 sm:grid-cols-2">
+                <!-- Basic Information -->
+                <div class="sm:col-span-2">
+                    <h2 class="text-base font-semibold leading-7 text-gray-900">Basic Information</h2>
+                </div>
+
+                <div class="sm:col-span-1">
+                    <label for="name" class="block text-sm font-medium text-gray-700">Package Name *</label>
+                    <input type="text" name="name" id="name" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" value="{{ app.session.get('old').name ?? '' }}">
+                </div>
+
+                <div class="sm:col-span-1">
+                    <label for="is_active" class="block text-sm font-medium text-gray-700">Status</label>
+                    <select name="is_active" id="is_active" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                        <option value="1" selected>Active</option>
+                        <option value="0">Inactive</option>
+                    </select>
+                </div>
+
+                <div class="sm:col-span-2">
+                    <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+                    <textarea name="description" id="description" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">{{ app.session.get('old').description ?? '' }}</textarea>
+                </div>
+
+                <!-- Resource Limits -->
+                <div class="sm:col-span-2 border-t border-gray-200 pt-6">
+                    <h2 class="text-base font-semibold leading-7 text-gray-900">Resource Limits</h2>
+                    <p class="mt-1 text-sm text-gray-500">Enter 0 for unlimited</p>
+                </div>
+
+                <div>
+                    <label for="disk_quota" class="block text-sm font-medium text-gray-700">Disk Space (MB)</label>
+                    <input type="number" name="disk_quota" id="disk_quota" min="0" value="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                </div>
+
+                <div>
+                    <label for="bandwidth_quota" class="block text-sm font-medium text-gray-700">Bandwidth (MB/month)</label>
+                    <input type="number" name="bandwidth_quota" id="bandwidth_quota" min="0" value="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                </div>
+
+                <div>
+                    <label for="max_domains" class="block text-sm font-medium text-gray-700">Max Addon Domains</label>
+                    <input type="number" name="max_domains" id="max_domains" min="0" value="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                </div>
+
+                <div>
+                    <label for="max_subdomains" class="block text-sm font-medium text-gray-700">Max Subdomains</label>
+                    <input type="number" name="max_subdomains" id="max_subdomains" min="0" value="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                </div>
+
+                <div>
+                    <label for="max_emails" class="block text-sm font-medium text-gray-700">Max Email Accounts</label>
+                    <input type="number" name="max_emails" id="max_emails" min="0" value="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                </div>
+
+                <div>
+                    <label for="max_databases" class="block text-sm font-medium text-gray-700">Max Databases</label>
+                    <input type="number" name="max_databases" id="max_databases" min="0" value="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                </div>
+
+                <div>
+                    <label for="max_ftp_accounts" class="block text-sm font-medium text-gray-700">Max FTP Accounts</label>
+                    <input type="number" name="max_ftp_accounts" id="max_ftp_accounts" min="0" value="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                </div>
+
+                <!-- Features -->
+                <div class="sm:col-span-2 border-t border-gray-200 pt-6">
+                    <h2 class="text-base font-semibold leading-7 text-gray-900">Features</h2>
+                </div>
+
+                <div class="flex items-center">
+                    <input type="checkbox" name="ssh_access" id="ssh_access" value="1" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                    <label for="ssh_access" class="ml-2 block text-sm text-gray-900">SSH/Terminal Access</label>
+                </div>
+
+                <div class="flex items-center">
+                    <input type="checkbox" name="cron_jobs" id="cron_jobs" value="1" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                    <label for="cron_jobs" class="ml-2 block text-sm text-gray-900">Cron Jobs</label>
+                </div>
+
+                <div class="flex items-center">
+                    <input type="checkbox" name="backup_access" id="backup_access" value="1" checked class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                    <label for="backup_access" class="ml-2 block text-sm text-gray-900">Backup Access</label>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-x-3 border-t border-gray-200 pt-6">
+                <a href="/admin/packages" class="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">Cancel</a>
+                <button type="submit" class="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">
+                    Create Package
+                </button>
+            </div>
+
+            {{ csrf_field() | raw }}
+        </form>
+    </div>
+</div>
+{% endblock %}
