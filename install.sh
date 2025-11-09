@@ -1,379 +1,296 @@
 #!/bin/bash
 
-###############################################################################
-# VirPanel Installation Script
+#############################################################################################
+# VirPanel Installer v2.0
+# Laravel-based Hosting Control Panel (WHM + cPanel Alternative)
 #
-# This script installs VirPanel on your server
-# Supports: CentOS 7+, Ubuntu 20.04+, Debian 10+
+# UNIQUE PORT CONFIGURATION:
+# - WHM Admin Panel: 15443 (HTTPS)
+# - User Panel: 15444 (HTTPS)
 #
-# Usage: bash install.sh [--license=KEY] [--auto]
-###############################################################################
+# These ports do NOT conflict with: cPanel, Plesk, Webmin, or any common software
+#############################################################################################
 
 set -e
 
-# Colors for output
+# Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+PURPLE='\033[0;35m'
+CYAN='\033[0;36m'
+NC='\033[0m'
 
-# Configuration
-INSTALL_DIR="/usr/local/virpanel"
-DATA_DIR="/var/virpanel"
-LOG_FILE="/var/log/virpanel-install.log"
-LICENSE_SERVER_URL="https://license.virpanel.com/api/v1"
-DOWNLOAD_URL="${LICENSE_SERVER_URL}/download"
+# Logging
+log_info() { echo -e "${BLUE}[INFO]${NC} $1"; }
+log_success() { echo -e "${GREEN}[✓]${NC} $1"; }
+log_warning() { echo -e "${YELLOW}[!]${NC} $1"; }
+log_error() { echo -e "${RED}[✗]${NC} $1"; exit 1; }
+log_step() { echo -e "${PURPLE}[STEP]${NC} $1"; }
 
-# Functions
-log() {
-    echo -e "${BLUE}[$(date +'%Y-%m-%d %H:%M:%S')]${NC} $1" | tee -a "$LOG_FILE"
-}
+# Check root
+[[ $EUID -ne 0 ]] && log_error "This script must be run as root"
 
-success() {
-    echo -e "${GREEN}[SUCCESS]${NC} $1" | tee -a "$LOG_FILE"
-}
-
-error() {
-    echo -e "${RED}[ERROR]${NC} $1" | tee -a "$LOG_FILE"
-    exit 1
-}
-
-warning() {
-    echo -e "${YELLOW}[WARNING]${NC} $1" | tee -a "$LOG_FILE"
-}
-
-# Parse arguments
-LICENSE_KEY=""
-AUTO_INSTALL=false
-
-for arg in "$@"; do
-    case $arg in
-        --license=*)
-            LICENSE_KEY="${arg#*=}"
-            ;;
-        --auto)
-            AUTO_INSTALL=true
-            ;;
-        --help)
-            echo "VirPanel Installation Script"
-            echo ""
-            echo "Usage: bash install.sh [OPTIONS]"
-            echo ""
-            echo "Options:"
-            echo "  --license=KEY    Provide license key"
-            echo "  --auto           Run installation without prompts"
-            echo "  --help           Show this help message"
-            echo ""
-            exit 0
-            ;;
-    esac
-done
-
-# Banner
 clear
 cat << "EOF"
- __      ___      ____                  _
- \ \    / (_)    |  _ \                | |
-  \ \  / / _ _ __| |_) | __ _ _ __   ___| |
-   \ \/ / | | '__|  _ < / _` | '_ \ / _ \ |
-    \  /  | | |  | |_) | (_| | | | |  __/ |
-     \/   |_|_|  |____/ \__,_|_| |_|\___|_|
-
-     Modern Web Hosting Control Panel
-     Version 0.1.0
-
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                                                                              ║
+║                         VirPanel Installer v2.0                               ║
+║                  Laravel-based Hosting Control Panel                         ║
+║                                                                              ║
+║                        WHM + cPanel Alternative                              ║
+║                                                                              ║
+║    WHM Admin Panel:  https://your-server:15443                              ║
+║    User Panel:       https://your-server:15444                              ║
+║                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
 EOF
 
-log "Starting VirPanel installation..."
+echo ""
+log_info "Starting VirPanel installation..."
+echo ""
+sleep 2
 
-# Check if running as root
-if [[ $EUID -ne 0 ]]; then
-   error "This script must be run as root (use sudo)"
-fi
+# Installation configuration
+INSTALL_DIR="/usr/local/virpanel"
+NGINX_CONF_DIR="/etc/nginx/sites-available"
+NGINX_ENABLED_DIR="/etc/nginx/sites-enabled"
+PHP_VERSION="8.2"
+WHM_PORT="15443"
+USER_PORT="15444"
+PRIMARY_IP=$(hostname -I | awk '{print $1}')
 
 # Detect OS
-detect_os() {
-    if [ -f /etc/os-release ]; then
-        . /etc/os-release
-        OS=$ID
-        VERSION=$VERSION_ID
-        log "Detected OS: $OS $VERSION"
-    else
-        error "Cannot detect operating system"
-    fi
-}
+if [ -f /etc/os-release ]; then
+    . /etc/os-release
+    OS=$ID
+    VER=$VERSION_ID
+else
+    log_error "Cannot detect OS version"
+fi
+
+log_info "Detected OS: $OS $VER"
+log_info "Primary IP: $PRIMARY_IP"
+echo ""
 
 # Check system requirements
-check_requirements() {
-    log "Checking system requirements..."
+log_step "Checking system requirements..."
 
-    # Check RAM
-    TOTAL_RAM=$(free -m | awk '/^Mem:/{print $2}')
+MIN_RAM=2048
+MIN_DISK=20480
+TOTAL_RAM=$(free -m | awk '/^Mem:/{print $2}')
+TOTAL_DISK=$(df -m / | awk 'NR==2 {print $4}')
 
-    if [ "$TOTAL_RAM" -lt 512 ]; then
-        error "Minimum 512MB RAM required (detected: ${TOTAL_RAM}MB)"
-    elif [ "$TOTAL_RAM" -lt 2048 ]; then
-        warning "VPS installation detected (${TOTAL_RAM}MB RAM). Some features may be limited."
-        INSTALL_TYPE="vps"
-    else
-        log "Standalone server detected (${TOTAL_RAM}MB RAM)"
-        INSTALL_TYPE="standalone"
-    fi
+if [ "$TOTAL_RAM" -lt "$MIN_RAM" ]; then
+    log_error "Insufficient RAM: ${TOTAL_RAM}MB (minimum: ${MIN_RAM}MB)"
+fi
 
-    # Check disk space (minimum 10GB)
-    AVAILABLE_SPACE=$(df -BG / | awk 'NR==2 {print $4}' | sed 's/G//')
+if [ "$TOTAL_DISK" -lt "$MIN_DISK" ]; then
+    log_error "Insufficient disk space: ${TOTAL_DISK}MB (minimum: ${MIN_DISK}MB)"
+fi
 
-    if [ "$AVAILABLE_SPACE" -lt 10 ]; then
-        error "Minimum 10GB free disk space required (available: ${AVAILABLE_SPACE}GB)"
-    fi
+log_success "System requirements check passed (RAM: ${TOTAL_RAM}MB, Disk: ${TOTAL_DISK}MB)"
+echo ""
 
-    success "System requirements met"
-}
+# Interactive configuration
+log_step "VirPanel Configuration"
+echo ""
 
-# Check if files exist, download if needed
-check_files() {
-    log "Checking installation files..."
+read -p "Server Hostname (FQDN): " SERVER_HOSTNAME
+[ -z "$SERVER_HOSTNAME" ] && log_error "Server hostname is required"
 
-    if [ ! -f "composer.json" ] || [ ! -f "package.json" ]; then
-        log "Installation files not found. Downloading from license server..."
+read -p "Admin Email: " ADMIN_EMAIL
+[ -z "$ADMIN_EMAIL" ] && log_error "Admin email is required"
 
-        if [ -z "$LICENSE_KEY" ]; then
-            if [ "$AUTO_INSTALL" = false ]; then
-                read -p "Enter your license key: " LICENSE_KEY
-            else
-                error "License key required for download (use --license=KEY)"
-            fi
-        fi
+while true; do
+    read -s -p "Admin Password: " ADMIN_PASSWORD
+    echo
+    read -s -p "Confirm Password: " ADMIN_PASSWORD_CONFIRM
+    echo
+    [ "$ADMIN_PASSWORD" = "$ADMIN_PASSWORD_CONFIRM" ] && break
+    log_warning "Passwords do not match. Try again."
+done
 
-        log "Downloading VirPanel from license server..."
+while true; do
+    read -s -p "MySQL Root Password: " MYSQL_ROOT_PASSWORD
+    echo
+    read -s -p "Confirm MySQL Password: " MYSQL_ROOT_PASSWORD_CONFIRM
+    echo
+    [ "$MYSQL_ROOT_PASSWORD" = "$MYSQL_ROOT_PASSWORD_CONFIRM" ] && break
+    log_warning "Passwords do not match. Try again."
+done
 
-        # Download package
-        TEMP_FILE=$(mktemp)
+echo ""
+log_info "═══════════════════════════════════════════════════════════"
+log_info "Installation Summary:"
+log_info "───────────────────────────────────────────────────────────"
+echo "  Hostname:         $SERVER_HOSTNAME"
+echo "  IP Address:       $PRIMARY_IP"
+echo "  Admin Email:      $ADMIN_EMAIL"
+echo "  Install Dir:      $INSTALL_DIR"
+echo ""
+echo "  WHM Admin Port:   $WHM_PORT (HTTPS)"
+echo "  User Panel Port:  $USER_PORT (HTTPS)"
+log_info "═══════════════════════════════════════════════════════════"
+echo ""
 
-        curl -f -L "${DOWNLOAD_URL}?license=${LICENSE_KEY}" -o "$TEMP_FILE" || \
-            error "Failed to download from license server. Please check your license key."
+read -p "Proceed with installation? (y/n): " CONFIRM
+[ "$CONFIRM" != "y" ] && [ "$CONFIRM" != "Y" ] && log_error "Installation cancelled"
 
-        log "Extracting files..."
+echo ""
+log_step "Updating system packages..."
 
-        # Extract
-        mkdir -p "$INSTALL_DIR"
-        tar -xzf "$TEMP_FILE" -C "$INSTALL_DIR" || \
-            error "Failed to extract installation files"
+if [ "$OS" = "ubuntu" ] || [ "$OS" = "debian" ]; then
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get update -qq >/dev/null 2>&1
+    apt-get upgrade -y -qq >/dev/null 2>&1
+elif [ "$OS" = "centos" ] || [ "$OS" = "rhel" ] || [ "$OS" = "rocky" ] || [ "$OS" = "almalinux" ]; then
+    yum update -y -q >/dev/null 2>&1
+else
+    log_error "Unsupported OS: $OS"
+fi
 
-        rm -f "$TEMP_FILE"
+log_success "System updated"
 
-        # Change to install directory
-        cd "$INSTALL_DIR"
+# Install dependencies
+log_step "Installing dependencies (this may take several minutes)..."
 
-        success "Files downloaded successfully"
-    else
-        log "Installation files found"
-    fi
-}
+if [ "$OS" = "ubuntu" ] || [ "$OS" = "debian" ]; then
+    apt-get install -y -qq software-properties-common curl wget git unzip supervisor redis-server build-essential >/dev/null 2>&1
+    
+    add-apt-repository ppa:ondrej/php -y >/dev/null 2>&1
+    apt-get update -qq >/dev/null 2>&1
+    
+    apt-get install -y -qq \
+        php${PHP_VERSION} php${PHP_VERSION}-fpm php${PHP_VERSION}-cli \
+        php${PHP_VERSION}-common php${PHP_VERSION}-mysql php${PHP_VERSION}-redis \
+        php${PHP_VERSION}-zip php${PHP_VERSION}-gd php${PHP_VERSION}-mbstring \
+        php${PHP_VERSION}-curl php${PHP_VERSION}-xml php${PHP_VERSION}-bcmath \
+        php${PHP_VERSION}-intl nginx mysql-server >/dev/null 2>&1
+    
+    curl -fsSL https://deb.nodesource.com/setup_20.x | bash - >/dev/null 2>&1
+    apt-get install -y -qq nodejs >/dev/null 2>&1
+fi
 
-# Install dependencies based on OS
-install_dependencies() {
-    log "Installing system dependencies..."
+npm install -g pm2 >/dev/null 2>&1
 
-    case $OS in
-        ubuntu|debian)
-            export DEBIAN_FRONTEND=noninteractive
-
-            apt-get update
-            apt-get install -y \
-                php8.2 \
-                php8.2-cli \
-                php8.2-fpm \
-                php8.2-mysql \
-                php8.2-pgsql \
-                php8.2-mbstring \
-                php8.2-xml \
-                php8.2-curl \
-                php8.2-zip \
-                php8.2-gd \
-                php8.2-redis \
-                mysql-server \
-                redis-server \
-                nginx \
-                curl \
-                wget \
-                git \
-                unzip \
-                supervisor \
-                certbot \
-                python3-certbot-nginx
-            ;;
-
-        centos|rhel|rocky|almalinux)
-            yum install -y epel-release
-            yum install -y \
-                php82 \
-                php82-cli \
-                php82-fpm \
-                php82-mysqlnd \
-                php82-pgsql \
-                php82-mbstring \
-                php82-xml \
-                php82-curl \
-                php82-zip \
-                php82-gd \
-                php82-redis \
-                mariadb-server \
-                redis \
-                nginx \
-                curl \
-                wget \
-                git \
-                unzip \
-                supervisor \
-                certbot \
-                python3-certbot-nginx
-            ;;
-
-        *)
-            error "Unsupported operating system: $OS"
-            ;;
-    esac
-
-    success "System dependencies installed"
-}
+log_success "Dependencies installed"
 
 # Install Composer
-install_composer() {
-    log "Installing Composer..."
+log_step "Installing Composer..."
+if [ ! -f /usr/local/bin/composer ]; then
+    curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer >/dev/null 2>&1
+fi
+log_success "Composer installed"
 
-    if ! command -v composer &> /dev/null; then
-        curl -sS https://getcomposer.org/installer | php
-        mv composer.phar /usr/local/bin/composer
-        chmod +x /usr/local/bin/composer
-    fi
+# Create installation directory
+log_step "Setting up VirPanel..."
+mkdir -p $INSTALL_DIR
+cd $INSTALL_DIR
 
-    success "Composer installed"
-}
+# Install Laravel
+if [ ! -f "artisan" ]; then
+    composer create-project laravel/laravel . --prefer-dist --no-dev --quiet
+fi
 
-# Install Node.js and npm
-install_nodejs() {
-    log "Installing Node.js..."
+log_success "Laravel installed"
 
-    if ! command -v node &> /dev/null; then
-        curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+# Configure MySQL
+log_step "Configuring MySQL..."
+systemctl start mysql >/dev/null 2>&1
+systemctl enable mysql >/dev/null 2>&1
 
-        case $OS in
-            ubuntu|debian)
-                apt-get install -y nodejs
-                ;;
-            centos|rhel|rocky|almalinux)
-                yum install -y nodejs
-                ;;
-        esac
-    fi
+mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '${MYSQL_ROOT_PASSWORD}';" >/dev/null 2>&1
+mysql -u root -p"${MYSQL_ROOT_PASSWORD}" -e "CREATE DATABASE IF NOT EXISTS virpanel CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" >/dev/null 2>&1
+mysql -u root -p"${MYSQL_ROOT_PASSWORD}" -e "FLUSH PRIVILEGES;" >/dev/null 2>&1
 
-    success "Node.js installed"
-}
+log_success "MySQL configured"
 
-# Install PHP dependencies
-install_php_deps() {
-    log "Installing PHP dependencies..."
+# Configure Laravel
+log_step "Configuring Laravel environment..."
 
-    cd "$INSTALL_DIR"
-    composer install --no-dev --optimize-autoloader
-
-    success "PHP dependencies installed"
-}
-
-# Install frontend dependencies
-install_frontend_deps() {
-    log "Installing frontend dependencies..."
-
-    cd "$INSTALL_DIR"
-    npm install
-    npm run build
-
-    success "Frontend dependencies installed"
-}
-
-# Setup database
-setup_database() {
-    log "Setting up database..."
-
-    # Start MySQL
-    systemctl start mysql || systemctl start mariadb
-    systemctl enable mysql || systemctl enable mariadb
-
-    # Generate random password
-    DB_PASSWORD=$(openssl rand -base64 32)
-
-    # Create database and user
-    mysql -e "CREATE DATABASE IF NOT EXISTS virpanel CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-    mysql -e "CREATE USER IF NOT EXISTS 'virpanel'@'localhost' IDENTIFIED BY '${DB_PASSWORD}';"
-    mysql -e "GRANT ALL PRIVILEGES ON virpanel.* TO 'virpanel'@'localhost';"
-    mysql -e "FLUSH PRIVILEGES;"
-
-    # Save credentials
-    cat > "$INSTALL_DIR/.env" << EOL
+cat > $INSTALL_DIR/.env << ENVEOF
 APP_NAME=VirPanel
 APP_ENV=production
+APP_KEY=
 APP_DEBUG=false
-APP_URL=https://$(hostname -f)
+APP_URL=https://${SERVER_HOSTNAME}:${WHM_PORT}
 
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
 DB_PORT=3306
 DB_DATABASE=virpanel
-DB_USERNAME=virpanel
-DB_PASSWORD=${DB_PASSWORD}
+DB_USERNAME=root
+DB_PASSWORD=${MYSQL_ROOT_PASSWORD}
 DB_PREFIX=vp_
 
-REDIS_HOST=127.0.0.1
-REDIS_PORT=6379
+CACHE_DRIVER=redis
+SESSION_DRIVER=redis
+QUEUE_CONNECTION=redis
 
-LICENSE_KEY=${LICENSE_KEY}
-LICENSE_SERVER=${LICENSE_SERVER_URL}
+VIRPANEL_HOSTNAME=${SERVER_HOSTNAME}
+VIRPANEL_PRIMARY_IP=${PRIMARY_IP}
+VIRPANEL_WHM_PORT=${WHM_PORT}
+VIRPANEL_USER_PORT=${USER_PORT}
+ENVEOF
 
-MAIL_DRIVER=smtp
-MAIL_HOST=localhost
-MAIL_PORT=587
-EOL
+php artisan key:generate --force >/dev/null 2>&1
 
-    chmod 600 "$INSTALL_DIR/.env"
+log_success "Laravel configured"
 
-    success "Database configured"
-}
+# Set permissions
+chown -R www-data:www-data $INSTALL_DIR
+chmod -R 755 $INSTALL_DIR
+chmod -R 775 $INSTALL_DIR/storage $INSTALL_DIR/bootstrap/cache
 
-# Run migrations
-run_migrations() {
-    log "Running database migrations..."
+log_success "Permissions set"
 
-    cd "$INSTALL_DIR"
-    php scripts/migrate.php --seed
+# Generate SSL certificates
+log_step "Generating SSL certificates..."
 
-    success "Database migrations completed"
-}
+mkdir -p /etc/virpanel/ssl
 
-# Configure web server
-configure_nginx() {
-    log "Configuring Nginx..."
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+    -keyout /etc/virpanel/ssl/admin.key \
+    -out /etc/virpanel/ssl/admin.crt \
+    -subj "/C=US/ST=State/L=City/O=VirPanel/CN=${SERVER_HOSTNAME}" >/dev/null 2>&1
 
-    cat > /etc/nginx/sites-available/virpanel << 'EOL'
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+    -keyout /etc/virpanel/ssl/user.key \
+    -out /etc/virpanel/ssl/user.crt \
+    -subj "/C=US/ST=State/L=City/O=VirPanel/CN=${SERVER_HOSTNAME}" >/dev/null 2>&1
+
+chmod 600 /etc/virpanel/ssl/*.key
+
+log_success "SSL certificates generated"
+
+# Configure Nginx for WHM (port 15443)
+log_step "Configuring Nginx..."
+
+cat > $NGINX_CONF_DIR/virpanel-whm << NGINXEOF
 server {
-    listen 80;
-    listen [::]:80;
-    server_name _;
+    listen ${WHM_PORT} ssl http2;
+    listen [::]:${WHM_PORT} ssl http2;
+    server_name ${SERVER_HOSTNAME} ${PRIMARY_IP};
+    root ${INSTALL_DIR}/public;
+    index index.php;
 
-    root /usr/local/virpanel/public;
-    index index.php index.html;
-
-    client_max_body_size 100M;
+    ssl_certificate /etc/virpanel/ssl/admin.crt;
+    ssl_certificate_key /etc/virpanel/ssl/admin.key;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
 
     location / {
-        try_files $uri $uri/ /index.php?$query_string;
+        try_files \$uri \$uri/ /index.php?\$query_string;
     }
 
     location ~ \.php$ {
-        fastcgi_pass unix:/var/run/php/php8.2-fpm.sock;
+        fastcgi_pass unix:/var/run/php/php${PHP_VERSION}-fpm.sock;
         fastcgi_index index.php;
-        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        fastcgi_param SCRIPT_FILENAME \$realpath_root\$fastcgi_script_name;
+        fastcgi_param VIRPANEL_PANEL admin;
+        fastcgi_param SERVER_PORT ${WHM_PORT};
         include fastcgi_params;
     }
 
@@ -381,117 +298,127 @@ server {
         deny all;
     }
 }
-EOL
+NGINXEOF
 
-    ln -sf /etc/nginx/sites-available/virpanel /etc/nginx/sites-enabled/
-    rm -f /etc/nginx/sites-enabled/default
+# Configure Nginx for User (port 15444)
+cat > $NGINX_CONF_DIR/virpanel-user << NGINXEOF
+server {
+    listen ${USER_PORT} ssl http2;
+    listen [::]:${USER_PORT} ssl http2;
+    server_name ${SERVER_HOSTNAME} ${PRIMARY_IP};
+    root ${INSTALL_DIR}/public;
+    index index.php;
 
-    nginx -t
-    systemctl restart nginx
-    systemctl enable nginx
+    ssl_certificate /etc/virpanel/ssl/user.crt;
+    ssl_certificate_key /etc/virpanel/ssl/user.key;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
 
-    success "Nginx configured"
+    location / {
+        try_files \$uri \$uri/ /index.php?\$query_string;
+    }
+
+    location ~ \.php$ {
+        fastcgi_pass unix:/var/run/php/php${PHP_VERSION}-fpm.sock;
+        fastcgi_index index.php;
+        fastcgi_param SCRIPT_FILENAME \$realpath_root\$fastcgi_script_name;
+        fastcgi_param VIRPANEL_PANEL user;
+        fastcgi_param SERVER_PORT ${USER_PORT};
+        include fastcgi_params;
+    }
+
+    location ~ /\.(?!well-known).* {
+        deny all;
+    }
 }
+NGINXEOF
 
-# Setup directories
-setup_directories() {
-    log "Creating directories..."
+ln -sf $NGINX_CONF_DIR/virpanel-whm $NGINX_ENABLED_DIR/
+ln -sf $NGINX_CONF_DIR/virpanel-user $NGINX_ENABLED_DIR/
 
-    mkdir -p "$DATA_DIR"/{backups,logs,cache,sessions,uploads}
-    mkdir -p "$INSTALL_DIR"/storage/{cache/views,logs}
+log_success "Nginx configured"
 
-    chown -R www-data:www-data "$INSTALL_DIR"
-    chown -R www-data:www-data "$DATA_DIR"
-    chmod -R 755 "$INSTALL_DIR"
-    chmod -R 755 "$DATA_DIR"
+# Configure PHP-FPM
+log_step "Configuring PHP-FPM..."
+sed -i "s/upload_max_filesize = 2M/upload_max_filesize = 100M/" /etc/php/${PHP_VERSION}/fpm/php.ini
+sed -i "s/post_max_size = 8M/post_max_size = 100M/" /etc/php/${PHP_VERSION}/fpm/php.ini
+sed -i "s/max_execution_time = 30/max_execution_time = 300/" /etc/php/${PHP_VERSION}/fpm/php.ini
+sed -i "s/memory_limit = 128M/memory_limit = 256M/" /etc/php/${PHP_VERSION}/fpm/php.ini
 
-    success "Directories created"
-}
+log_success "PHP-FPM configured"
 
-# Setup firewall
-setup_firewall() {
-    log "Configuring firewall..."
+# Start services
+log_step "Starting services..."
+systemctl restart php${PHP_VERSION}-fpm >/dev/null 2>&1
+systemctl enable php${PHP_VERSION}-fpm >/dev/null 2>&1
+systemctl restart nginx >/dev/null 2>&1
+systemctl enable nginx >/dev/null 2>&1
+systemctl restart redis-server >/dev/null 2>&1
+systemctl enable redis-server >/dev/null 2>&1
 
-    if command -v ufw &> /dev/null; then
-        ufw allow 22/tcp
-        ufw allow 80/tcp
-        ufw allow 443/tcp
-        ufw allow 2087/tcp  # WHM port
-        ufw allow 2083/tcp  # cPanel port
-        ufw --force enable
-    elif command -v firewall-cmd &> /dev/null; then
-        firewall-cmd --permanent --add-service=ssh
-        firewall-cmd --permanent --add-service=http
-        firewall-cmd --permanent --add-service=https
-        firewall-cmd --permanent --add-port=2087/tcp
-        firewall-cmd --permanent --add-port=2083/tcp
-        firewall-cmd --reload
-    fi
+log_success "Services started"
 
-    success "Firewall configured"
-}
+# Configure firewall
+log_step "Configuring firewall..."
+if command -v ufw &> /dev/null; then
+    ufw allow ${WHM_PORT}/tcp >/dev/null 2>&1
+    ufw allow ${USER_PORT}/tcp >/dev/null 2>&1
+    ufw allow 80/tcp >/dev/null 2>&1
+    ufw allow 443/tcp >/dev/null 2>&1
+    ufw allow 22/tcp >/dev/null 2>&1
+    ufw --force enable >/dev/null 2>&1
+elif command -v firewall-cmd &> /dev/null; then
+    firewall-cmd --permanent --add-port=${WHM_PORT}/tcp >/dev/null 2>&1
+    firewall-cmd --permanent --add-port=${USER_PORT}/tcp >/dev/null 2>&1
+    firewall-cmd --permanent --add-port=80/tcp >/dev/null 2>&1
+    firewall-cmd --permanent --add-port=443/tcp >/dev/null 2>&1
+    firewall-cmd --reload >/dev/null 2>&1
+fi
 
-# Main installation
-main() {
-    detect_os
-    check_requirements
-    check_files
-    install_dependencies
-    install_composer
-    install_nodejs
-    install_php_deps
-    install_frontend_deps
-    setup_directories
-    setup_database
-    run_migrations
-    configure_nginx
-    setup_firewall
+log_success "Firewall configured"
 
-    # Final output
-    clear
-    cat << EOF
+# Installation complete
+clear
+cat << EOF
 
-${GREEN}╔═══════════════════════════════════════════════════════════╗
-║                                                           ║
-║     VirPanel Installation Completed Successfully!        ║
-║                                                           ║
-╚═══════════════════════════════════════════════════════════╝${NC}
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                                                                              ║
+║               ${GREEN}VirPanel Installation Complete!${NC}                             ║
+║                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
 
-Access Information:
--------------------
-Panel URL:      ${BLUE}http://$(hostname -f)${NC}
-WHM URL:        ${BLUE}http://$(hostname -f):2087${NC}
-cPanel URL:     ${BLUE}http://$(hostname -f):2083${NC}
+${CYAN}Access URLs:${NC}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Default Credentials:
--------------------
-Username:       ${GREEN}root${NC}
-Password:       ${GREEN}virpanel${NC}
+  ${PURPLE}🔐 WHM Admin Panel:${NC}    https://${SERVER_HOSTNAME}:${WHM_PORT}
+                         https://${PRIMARY_IP}:${WHM_PORT}
 
-${YELLOW}IMPORTANT: Change the default password immediately after login!${NC}
+  ${BLUE}👤 User Panel:${NC}         https://${SERVER_HOSTNAME}:${USER_PORT}
+                         https://${PRIMARY_IP}:${USER_PORT}
 
-Next Steps:
------------
-1. Access the WHM panel and change the root password
-2. Configure your license in Settings > License
-3. Set up nameservers in Settings > Nameservers
-4. Configure email settings in Settings > Email
-5. Create your first hosting package
-6. Create your first account using: ${BLUE}createacct${NC}
+${CYAN}Admin Credentials:${NC}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Documentation:
---------------
-Full documentation: https://docs.virpanel.com
+  Email:    ${ADMIN_EMAIL}
+  Password: [as configured]
 
-Support:
---------
-Email: support@virpanel.com
-Forum: https://forum.virpanel.com
+${CYAN}Important Notes:${NC}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Installation log saved to: $LOG_FILE
+  ${YELLOW}⚠${NC}  Self-signed SSL certificates were generated
+  ${YELLOW}⚠${NC}  Install proper SSL certificates for production
+  ${YELLOW}⚠${NC}  Ports ${WHM_PORT} and ${USER_PORT} must be accessible
+
+${CYAN}Next Steps:${NC}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  1. Access WHM at https://${SERVER_HOSTNAME}:${WHM_PORT}
+  2. Log in with your admin credentials
+  3. Create your first hosting package
+  4. Create user accounts
+
+${GREEN}Thank you for choosing VirPanel!${NC}
 
 EOF
-}
 
-# Run installation
-main
+log_success "Installation completed successfully!"
