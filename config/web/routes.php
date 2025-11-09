@@ -13,6 +13,7 @@ use VirPanel\Core\Http\Controllers\AccountController;
 use VirPanel\Core\Http\Controllers\PackageController;
 use VirPanel\Core\Http\Controllers\CloudflareController;
 use VirPanel\Core\Http\Controllers\FileManagerController;
+use VirPanel\Core\Http\Controllers\ResellerController;
 use VirPanel\Core\Http\Middleware\GuestMiddleware;
 use VirPanel\Core\Http\Middleware\AuthenticateMiddleware;
 use VirPanel\Core\Http\Middleware\CsrfMiddleware;
@@ -74,6 +75,16 @@ return function (WebRouter $router) {
     $router->get('/admin/filemanager/{id}/edit', [FileManagerController::class, 'edit'], [AuthenticateMiddleware::class]);
     $router->post('/admin/filemanager/{id}/save', [FileManagerController::class, 'save'], [AuthenticateMiddleware::class]);
     $router->post('/admin/filemanager/{id}/chmod', [FileManagerController::class, 'chmod'], [AuthenticateMiddleware::class]);
+
+    // Reseller Management
+    $router->get('/admin/resellers', [ResellerController::class, 'index'], [AuthenticateMiddleware::class]);
+    $router->get('/admin/resellers/create', [ResellerController::class, 'create'], [AuthenticateMiddleware::class]);
+    $router->post('/admin/resellers', [ResellerController::class, 'store'], [AuthenticateMiddleware::class]);
+    $router->get('/admin/resellers/{id}', [ResellerController::class, 'show'], [AuthenticateMiddleware::class]);
+    $router->get('/admin/resellers/{id}/edit', [ResellerController::class, 'edit'], [AuthenticateMiddleware::class]);
+    $router->post('/admin/resellers/{id}', [ResellerController::class, 'update'], [AuthenticateMiddleware::class]);
+    $router->post('/admin/resellers/{id}/suspend', [ResellerController::class, 'suspend'], [AuthenticateMiddleware::class]);
+    $router->post('/admin/resellers/{id}/unsuspend', [ResellerController::class, 'unsuspend'], [AuthenticateMiddleware::class]);
 
     // Redirect root to appropriate dashboard
     $router->get('/', function($request) {

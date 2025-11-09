@@ -1,0 +1,162 @@
+{% extends 'layouts/admin.html.twig' %}
+
+{% block title %}Edit Reseller - {{ reseller.username }}{% endblock %}
+
+{% block content %}
+<div class="px-4 sm:px-6 lg:px-8">
+    <div class="sm:flex sm:items-center">
+        <div class="sm:flex-auto">
+            <h1 class="text-2xl font-semibold text-gray-900">Edit Reseller: {{ reseller.username }}</h1>
+            <p class="mt-2 text-sm text-gray-700">Update reseller account settings and resource allocations</p>
+        </div>
+        <div class="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
+            <a href="/admin/resellers/{{ reseller.id }}" class="block rounded-md bg-white px-3 py-2 text-center text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+                Back to Reseller
+            </a>
+        </div>
+    </div>
+
+    {% if app.session.get('errors') %}
+    <div class="mt-4 rounded-md bg-red-50 p-4">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" />
+                </svg>
+            </div>
+            <div class="ml-3">
+                <h3 class="text-sm font-medium text-red-800">There were errors with your submission:</h3>
+                <div class="mt-2 text-sm text-red-700">
+                    <ul class="list-disc space-y-1 pl-5">
+                        {% for error in app.session.get('errors') %}
+                        <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="mt-8">
+        <form action="/admin/resellers/{{ reseller.id }}" method="POST" class="space-y-8">
+            {{ csrf_field() | raw }}
+
+            <!-- Account Information -->
+            <div class="bg-white shadow sm:rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Account Information</h3>
+                    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                        <div>
+                            <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
+                            <input type="text" name="username" id="username" disabled
+                                   value="{{ reseller.username }}"
+                                   class="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm sm:text-sm">
+                            <p class="mt-1 text-xs text-gray-500">Username cannot be changed</p>
+                        </div>
+
+                        <div>
+                            <label for="email" class="block text-sm font-medium text-gray-700">Email Address *</label>
+                            <input type="email" name="email" id="email" required
+                                   value="{{ reseller.email }}"
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                        </div>
+
+                        <div>
+                            <label for="password" class="block text-sm font-medium text-gray-700">New Password</label>
+                            <input type="password" name="password" id="password" minlength="8"
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                            <p class="mt-1 text-xs text-gray-500">Leave blank to keep current password</p>
+                        </div>
+
+                        <div>
+                            <label for="password_confirm" class="block text-sm font-medium text-gray-700">Confirm New Password</label>
+                            <input type="password" name="password_confirm" id="password_confirm" minlength="8"
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resource Allocations -->
+            <div class="bg-white shadow sm:rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Resource Allocations</h3>
+                    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                        <div>
+                            <label for="max_accounts" class="block text-sm font-medium text-gray-700">Maximum Accounts</label>
+                            <input type="number" name="max_accounts" id="max_accounts" min="0"
+                                   value="{{ reseller.max_accounts }}"
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                            <p class="mt-1 text-xs text-gray-500">0 = Unlimited</p>
+                        </div>
+
+                        <div>
+                            <label for="disk_quota" class="block text-sm font-medium text-gray-700">Disk Quota (GB)</label>
+                            <input type="number" name="disk_quota" id="disk_quota" min="0" step="0.1"
+                                   value="{{ reseller.disk_quota == 0 ? 0 : (reseller.disk_quota / 1024 / 1024 / 1024) | round(2) }}"
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                            <p class="mt-1 text-xs text-gray-500">0 = Unlimited</p>
+                        </div>
+
+                        <div>
+                            <label for="bandwidth_quota" class="block text-sm font-medium text-gray-700">Bandwidth Quota (GB/month)</label>
+                            <input type="number" name="bandwidth_quota" id="bandwidth_quota" min="0" step="0.1"
+                                   value="{{ reseller.bandwidth_quota == 0 ? 0 : (reseller.bandwidth_quota / 1024 / 1024 / 1024) | round(2) }}"
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                            <p class="mt-1 text-xs text-gray-500">0 = Unlimited</p>
+                        </div>
+
+                        <div class="flex items-center">
+                            <div class="flex h-5 items-center">
+                                <input type="checkbox" name="allow_overselling" id="allow_overselling" value="1"
+                                       {{ reseller.allow_overselling ? 'checked' : '' }}
+                                       class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                            </div>
+                            <div class="ml-3">
+                                <label for="allow_overselling" class="font-medium text-gray-700">Allow Overselling</label>
+                                <p class="text-xs text-gray-500">Allow reseller to allocate more resources than their quota</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Current Usage -->
+            <div class="bg-white shadow sm:rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Current Usage</h3>
+                    <dl class="grid grid-cols-1 gap-6 sm:grid-cols-3">
+                        <div>
+                            <dt class="text-sm font-medium text-gray-500">Accounts Created</dt>
+                            <dd class="mt-1 text-2xl font-semibold text-gray-900">{{ reseller.account_count | default(0) }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-sm font-medium text-gray-500">Disk Used</dt>
+                            <dd class="mt-1 text-2xl font-semibold text-gray-900">
+                                {{ (reseller.disk_used / 1024 / 1024 / 1024) | round(2) }} GB
+                            </dd>
+                        </div>
+                        <div>
+                            <dt class="text-sm font-medium text-gray-500">Bandwidth Used</dt>
+                            <dd class="mt-1 text-2xl font-semibold text-gray-900">
+                                {{ (reseller.bandwidth_used / 1024 / 1024 / 1024) | round(2) }} GB
+                            </dd>
+                        </div>
+                    </dl>
+                </div>
+            </div>
+
+            <!-- Submit Buttons -->
+            <div class="flex justify-end gap-3">
+                <a href="/admin/resellers/{{ reseller.id }}" class="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+                    Cancel
+                </a>
+                <button type="submit" class="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">
+                    Update Reseller
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

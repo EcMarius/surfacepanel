@@ -1,0 +1,314 @@
+{% extends 'layouts/admin.html.twig' %}
+
+{% block title %}Reseller Details - {{ reseller.username }}{% endblock %}
+
+{% block content %}
+<div class="px-4 sm:px-6 lg:px-8">
+    <div class="sm:flex sm:items-center">
+        <div class="sm:flex-auto">
+            <h1 class="text-2xl font-semibold text-gray-900">Reseller: {{ reseller.username }}</h1>
+            <p class="mt-2 text-sm text-gray-700">{{ reseller.email }}</p>
+        </div>
+        <div class="mt-4 sm:ml-16 sm:mt-0 sm:flex-none space-x-3">
+            <a href="/admin/resellers/{{ reseller.id }}/edit" class="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500">
+                Edit Reseller
+            </a>
+            <a href="/admin/resellers" class="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+                Back to Resellers
+            </a>
+        </div>
+    </div>
+
+    {% if app.session.get('success') %}
+    <div class="mt-4 rounded-md bg-green-50 p-4">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" />
+                </svg>
+            </div>
+            <div class="ml-3">
+                <p class="text-sm font-medium text-green-800">{{ app.session.get('success') }}</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if app.session.get('error') %}
+    <div class="mt-4 rounded-md bg-red-50 p-4">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" />
+                </svg>
+            </div>
+            <div class="ml-3">
+                <p class="text-sm font-medium text-red-800">{{ app.session.get('error') }}</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <!-- Main Content -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- Reseller Information -->
+            <div class="overflow-hidden bg-white shadow sm:rounded-lg">
+                <div class="px-4 py-5 sm:px-6 flex justify-between items-center">
+                    <div>
+                        <h3 class="text-lg font-medium leading-6 text-gray-900">Reseller Information</h3>
+                    </div>
+                    <div>
+                        {% if reseller.is_active %}
+                            <span class="inline-flex rounded-full bg-green-100 px-3 py-1 text-sm font-semibold text-green-800">Active</span>
+                        {% else %}
+                            <span class="inline-flex rounded-full bg-red-100 px-3 py-1 text-sm font-semibold text-red-800">Suspended</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="border-t border-gray-200 px-4 py-5 sm:px-6">
+                    <dl class="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
+                        <div class="sm:col-span-1">
+                            <dt class="text-sm font-medium text-gray-500">Username</dt>
+                            <dd class="mt-1 text-sm text-gray-900">{{ reseller.username }}</dd>
+                        </div>
+                        <div class="sm:col-span-1">
+                            <dt class="text-sm font-medium text-gray-500">Email</dt>
+                            <dd class="mt-1 text-sm text-gray-900">{{ reseller.email }}</dd>
+                        </div>
+                        <div class="sm:col-span-1">
+                            <dt class="text-sm font-medium text-gray-500">Created</dt>
+                            <dd class="mt-1 text-sm text-gray-900">{{ reseller.created_at | date('F j, Y g:i A') }}</dd>
+                        </div>
+                        <div class="sm:col-span-1">
+                            <dt class="text-sm font-medium text-gray-500">Last Updated</dt>
+                            <dd class="mt-1 text-sm text-gray-900">{{ reseller.updated_at | date('F j, Y g:i A') }}</dd>
+                        </div>
+                    </dl>
+                </div>
+            </div>
+
+            <!-- Resource Allocations -->
+            <div class="overflow-hidden bg-white shadow sm:rounded-lg">
+                <div class="px-4 py-5 sm:px-6">
+                    <h3 class="text-lg font-medium leading-6 text-gray-900">Resource Allocations</h3>
+                </div>
+                <div class="border-t border-gray-200 px-4 py-5 sm:px-6">
+                    <dl class="space-y-6">
+                        <!-- Accounts -->
+                        <div>
+                            <div class="flex justify-between text-sm">
+                                <dt class="font-medium text-gray-500">Accounts</dt>
+                                <dd class="text-gray-900">
+                                    {{ accounts | length }}
+                                    {% if reseller.max_accounts > 0 %}
+                                        / {{ reseller.max_accounts }}
+                                    {% else %}
+                                        / Unlimited
+                                    {% endif %}
+                                </dd>
+                            </div>
+                            {% if reseller.max_accounts > 0 %}
+                            <div class="mt-2 w-full bg-gray-200 rounded-full h-2">
+                                {% set accountPercent = ((accounts | length) / reseller.max_accounts * 100) | round %}
+                                <div class="bg-purple-600 h-2 rounded-full" style="width: {{ min(accountPercent, 100) }}%"></div>
+                            </div>
+                            <p class="mt-1 text-xs text-gray-500">{{ accountPercent }}% used</p>
+                            {% endif %}
+                        </div>
+
+                        <!-- Disk Usage -->
+                        <div>
+                            <div class="flex justify-between text-sm">
+                                <dt class="font-medium text-gray-500">Disk Usage</dt>
+                                <dd class="text-gray-900">
+                                    {{ (diskUsed / 1024 / 1024 / 1024) | round(2) }} GB /
+                                    {% if reseller.disk_quota == 0 %}
+                                        Unlimited
+                                    {% else %}
+                                        {{ (reseller.disk_quota / 1024 / 1024 / 1024) | round(2) }} GB
+                                    {% endif %}
+                                </dd>
+                            </div>
+                            {% if reseller.disk_quota > 0 %}
+                            <div class="mt-2 w-full bg-gray-200 rounded-full h-2">
+                                {% set diskPercent = (diskUsed / reseller.disk_quota * 100) | round %}
+                                <div class="bg-blue-600 h-2 rounded-full" style="width: {{ min(diskPercent, 100) }}%"></div>
+                            </div>
+                            <p class="mt-1 text-xs text-gray-500">{{ diskPercent }}% used</p>
+                            {% endif %}
+                        </div>
+
+                        <!-- Bandwidth Usage -->
+                        <div>
+                            <div class="flex justify-between text-sm">
+                                <dt class="font-medium text-gray-500">Bandwidth Usage (This Month)</dt>
+                                <dd class="text-gray-900">
+                                    {{ (bandwidthUsed / 1024 / 1024 / 1024) | round(2) }} GB /
+                                    {% if reseller.bandwidth_quota == 0 %}
+                                        Unlimited
+                                    {% else %}
+                                        {{ (reseller.bandwidth_quota / 1024 / 1024 / 1024) | round(2) }} GB
+                                    {% endif %}
+                                </dd>
+                            </div>
+                            {% if reseller.bandwidth_quota > 0 %}
+                            <div class="mt-2 w-full bg-gray-200 rounded-full h-2">
+                                {% set bwPercent = (bandwidthUsed / reseller.bandwidth_quota * 100) | round %}
+                                <div class="bg-green-600 h-2 rounded-full" style="width: {{ min(bwPercent, 100) }}%"></div>
+                            </div>
+                            <p class="mt-1 text-xs text-gray-500">{{ bwPercent }}% used</p>
+                            {% endif %}
+                        </div>
+
+                        <!-- Overselling -->
+                        <div class="flex justify-between text-sm">
+                            <dt class="font-medium text-gray-500">Overselling</dt>
+                            <dd class="text-gray-900">
+                                {% if reseller.allow_overselling %}
+                                    <span class="inline-flex rounded-full bg-yellow-100 px-2 text-xs font-semibold text-yellow-800">Enabled</span>
+                                {% else %}
+                                    <span class="inline-flex rounded-full bg-gray-100 px-2 text-xs font-semibold text-gray-800">Disabled</span>
+                                {% endif %}
+                            </dd>
+                        </div>
+                    </dl>
+                </div>
+            </div>
+
+            <!-- Accounts -->
+            <div class="overflow-hidden bg-white shadow sm:rounded-lg">
+                <div class="px-4 py-5 sm:px-6">
+                    <h3 class="text-lg font-medium leading-6 text-gray-900">Accounts ({{ accounts | length }})</h3>
+                </div>
+                <div class="border-t border-gray-200">
+                    {% if accounts %}
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Username</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Domain</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Disk Used</th>
+                                <th scope="col" class="relative px-6 py-3">
+                                    <span class="sr-only">View</span>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for account in accounts %}
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                    {{ account.username }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {{ account.domain }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    {% if account.status == 'active' %}
+                                        <span class="inline-flex rounded-full bg-green-100 px-2 text-xs font-semibold text-green-800">Active</span>
+                                    {% elseif account.status == 'suspended' %}
+                                        <span class="inline-flex rounded-full bg-yellow-100 px-2 text-xs font-semibold text-yellow-800">Suspended</span>
+                                    {% else %}
+                                        <span class="inline-flex rounded-full bg-red-100 px-2 text-xs font-semibold text-red-800">Terminated</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {{ (account.disk_used / 1024 / 1024) | round(2) }} MB
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                    <a href="/admin/accounts/{{ account.id }}" class="text-blue-600 hover:text-blue-900">View</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <div class="px-6 py-8 text-center text-sm text-gray-500">
+                        <div class="flex flex-col items-center">
+                            <svg class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
+                            </svg>
+                            <p class="mt-2 font-semibold">No accounts yet</p>
+                            <p class="mt-1 text-xs">This reseller hasn't created any accounts</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions Sidebar -->
+        <div class="space-y-6">
+            <!-- Quick Stats -->
+            <div class="overflow-hidden bg-white shadow sm:rounded-lg">
+                <div class="px-4 py-5 sm:px-6">
+                    <h3 class="text-lg font-medium leading-6 text-gray-900">Quick Stats</h3>
+                </div>
+                <div class="border-t border-gray-200 px-4 py-5 sm:px-6">
+                    <dl class="space-y-4">
+                        <div class="flex justify-between">
+                            <dt class="text-sm text-gray-500">Total Accounts</dt>
+                            <dd class="text-sm font-semibold text-gray-900">{{ accounts | length }}</dd>
+                        </div>
+                        <div class="flex justify-between">
+                            <dt class="text-sm text-gray-500">Active Accounts</dt>
+                            <dd class="text-sm font-semibold text-gray-900">
+                                {{ accounts | filter(a => a.status == 'active') | length }}
+                            </dd>
+                        </div>
+                        <div class="flex justify-between">
+                            <dt class="text-sm text-gray-500">Suspended Accounts</dt>
+                            <dd class="text-sm font-semibold text-gray-900">
+                                {{ accounts | filter(a => a.status == 'suspended') | length }}
+                            </dd>
+                        </div>
+                    </dl>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="overflow-hidden bg-white shadow sm:rounded-lg">
+                <div class="px-4 py-5 sm:px-6">
+                    <h3 class="text-lg font-medium leading-6 text-gray-900">Actions</h3>
+                </div>
+                <div class="border-t border-gray-200 px-4 py-5 sm:px-6">
+                    <div class="space-y-3">
+                        {% if reseller.is_active %}
+                        <form action="/admin/resellers/{{ reseller.id }}/suspend" method="POST" onsubmit="return confirm('Are you sure you want to suspend this reseller?');">
+                            {{ csrf_field() | raw }}
+                            <button type="submit" class="w-full rounded-md bg-yellow-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-yellow-500">
+                                Suspend Reseller
+                            </button>
+                        </form>
+                        {% else %}
+                        <form action="/admin/resellers/{{ reseller.id }}/unsuspend" method="POST">
+                            {{ csrf_field() | raw }}
+                            <button type="submit" class="w-full rounded-md bg-green-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-500">
+                                Unsuspend Reseller
+                            </button>
+                        </form>
+                        {% endif %}
+
+                        <button type="button" onclick="window.location.href='/admin/resellers/{{ reseller.id }}/edit'" class="w-full rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500">
+                            Edit Settings
+                        </button>
+
+                        <button type="button" onclick="window.location.href='/admin/resellers/{{ reseller.id }}/change-password'" class="w-full rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500">
+                            Change Password
+                        </button>
+
+                        <form action="/admin/resellers/{{ reseller.id }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this reseller? This action cannot be undone!');">
+                            <input type="hidden" name="_method" value="DELETE">
+                            {{ csrf_field() | raw }}
+                            <button type="submit" class="w-full rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500">
+                                Delete Reseller
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
