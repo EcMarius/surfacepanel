@@ -12,6 +12,7 @@ use VirPanel\Core\Http\Controllers\AdminDashboardController;
 use VirPanel\Core\Http\Controllers\AccountController;
 use VirPanel\Core\Http\Controllers\PackageController;
 use VirPanel\Core\Http\Controllers\CloudflareController;
+use VirPanel\Core\Http\Controllers\FileManagerController;
 use VirPanel\Core\Http\Middleware\GuestMiddleware;
 use VirPanel\Core\Http\Middleware\AuthenticateMiddleware;
 use VirPanel\Core\Http\Middleware\CsrfMiddleware;
@@ -62,6 +63,17 @@ return function (WebRouter $router) {
     $router->get('/admin/cloudflare/create', [CloudflareController::class, 'create'], [AuthenticateMiddleware::class]);
     $router->post('/admin/cloudflare', [CloudflareController::class, 'store'], [AuthenticateMiddleware::class]);
     $router->get('/admin/cloudflare/{id}', [CloudflareController::class, 'show'], [AuthenticateMiddleware::class]);
+
+    // File Manager
+    $router->get('/admin/filemanager/{id}', [FileManagerController::class, 'index'], [AuthenticateMiddleware::class]);
+    $router->post('/admin/filemanager/{id}/upload', [FileManagerController::class, 'upload'], [AuthenticateMiddleware::class]);
+    $router->get('/admin/filemanager/{id}/download', [FileManagerController::class, 'download'], [AuthenticateMiddleware::class]);
+    $router->post('/admin/filemanager/{id}/folder', [FileManagerController::class, 'createFolder'], [AuthenticateMiddleware::class]);
+    $router->post('/admin/filemanager/{id}/delete', [FileManagerController::class, 'delete'], [AuthenticateMiddleware::class]);
+    $router->post('/admin/filemanager/{id}/rename', [FileManagerController::class, 'rename'], [AuthenticateMiddleware::class]);
+    $router->get('/admin/filemanager/{id}/edit', [FileManagerController::class, 'edit'], [AuthenticateMiddleware::class]);
+    $router->post('/admin/filemanager/{id}/save', [FileManagerController::class, 'save'], [AuthenticateMiddleware::class]);
+    $router->post('/admin/filemanager/{id}/chmod', [FileManagerController::class, 'chmod'], [AuthenticateMiddleware::class]);
 
     // Redirect root to appropriate dashboard
     $router->get('/', function($request) {

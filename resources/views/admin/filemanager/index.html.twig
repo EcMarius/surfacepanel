@@ -1,0 +1,259 @@
+{% extends 'layouts/admin.html.twig' %}
+
+{% block title %}File Manager{% if account %} - {{ account.username }}{% endif %}{% endblock %}
+
+{% block content %}
+<div class="px-4 sm:px-6 lg:px-8" x-data="fileManager()">
+    <div class="sm:flex sm:items-center">
+        <div class="sm:flex-auto">
+            <h1 class="text-2xl font-semibold text-gray-900">File Manager{% if account %} - {{ account.username }}{% endif %}</h1>
+            <nav class="mt-2 flex" aria-label="Breadcrumb">
+                <ol class="flex items-center space-x-2 text-sm">
+                    {% for crumb in breadcrumbs %}
+                    <li>
+                        {% if not loop.last %}
+                        <a href="?path={{ crumb.path }}" class="text-blue-600 hover:text-blue-500">{{ crumb.name }}</a>
+                        <span class="mx-2 text-gray-400">/</span>
+                        {% else %}
+                        <span class="text-gray-500">{{ crumb.name }}</span>
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ol>
+            </nav>
+        </div>
+        <div class="mt-4 sm:ml-16 sm:mt-0 flex gap-2">
+            <button @click="showUpload = true" class="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500">
+                Upload Files
+            </button>
+            <button @click="showNewFolder = true" class="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+                New Folder
+            </button>
+            {% if isAdmin %}
+            <a href="/admin/accounts/{{ account.id }}" class="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+                Back to Account
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Upload Modal -->
+    <div x-show="showUpload" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
+        <div class="flex min-h-screen items-end justify-center px-4 pb-20 pt-4 text-center sm:block sm:p-0">
+            <div @click="showUpload = false" class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
+            <div class="inline-block align-bottom bg-white rounded-lg px-4 pb-4 pt-5 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
+                <div>
+                    <h3 class="text-lg font-medium leading-6 text-gray-900">Upload Files</h3>
+                    <div class="mt-4">
+                        <input type="file" multiple @change="handleFileSelect" class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer">
+                        <div class="mt-4" x-show="selectedFiles.length > 0">
+                            <p class="text-sm text-gray-500">Selected files:</p>
+                            <ul class="mt-2 space-y-1">
+                                <template x-for="file in selectedFiles" :key="file.name">
+                                    <li class="text-sm text-gray-700" x-text="file.name"></li>
+                                </template>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-5 sm:mt-6 sm:grid sm:grid-flow-row-dense sm:grid-cols-2 sm:gap-3">
+                    <button @click="uploadFiles" type="button" class="inline-flex w-full justify-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 sm:col-start-2">
+                        Upload
+                    </button>
+                    <button @click="showUpload = false; selectedFiles = []" type="button" class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:col-start-1 sm:mt-0">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Folder Modal -->
+    <div x-show="showNewFolder" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
+        <div class="flex min-h-screen items-end justify-center px-4 pb-20 pt-4 text-center sm:block sm:p-0">
+            <div @click="showNewFolder = false" class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
+            <div class="inline-block align-bottom bg-white rounded-lg px-4 pb-4 pt-5 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
+                <div>
+                    <h3 class="text-lg font-medium leading-6 text-gray-900">Create New Folder</h3>
+                    <div class="mt-4">
+                        <input type="text" x-model="newFolderName" placeholder="Folder name" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                    </div>
+                </div>
+                <div class="mt-5 sm:mt-6 sm:grid sm:grid-flow-row-dense sm:grid-cols-2 sm:gap-3">
+                    <button @click="createFolder" type="button" class="inline-flex w-full justify-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 sm:col-start-2">
+                        Create
+                    </button>
+                    <button @click="showNewFolder = false; newFolderName = ''" type="button" class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:col-start-1 sm:mt-0">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-8 flow-root">
+        <div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+            <div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
+                <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
+                    <table class="min-w-full divide-y divide-gray-300">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Name</th>
+                                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Size</th>
+                                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Permissions</th>
+                                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Modified</th>
+                                <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6">
+                                    <span class="sr-only">Actions</span>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200 bg-white">
+                            {% for item in items %}
+                            <tr>
+                                <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-6">
+                                    <div class="flex items-center">
+                                        {% if item.type == 'directory' %}
+                                        <svg class="h-5 w-5 text-blue-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
+                                        </svg>
+                                        <a href="?path={{ item.path }}" class="font-medium text-gray-900 hover:text-blue-600">{{ item.name }}</a>
+                                        {% else %}
+                                        <svg class="h-5 w-5 text-gray-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                                        </svg>
+                                        <span class="font-medium text-gray-900">{{ item.name }}</span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                    {% if item.type == 'file' %}
+                                        {{ (item.size / 1024) | round(2) }} KB
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500 font-mono">
+                                    {{ item.permissions }}
+                                </td>
+                                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                    {{ item.modified | date('Y-m-d H:i') }}
+                                </td>
+                                <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                                    <div class="flex justify-end gap-2">
+                                        {% if item.type == 'file' %}
+                                        <a href="/admin/filemanager/{{ account.id }}/download?path={{ item.path }}" class="text-blue-600 hover:text-blue-900">Download</a>
+                                        {% endif %}
+                                        <button @click="deleteItem('{{ item.path }}', '{{ item.name }}')" class="text-red-600 hover:text-red-900">Delete</button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="5" class="px-3 py-8 text-center text-sm text-gray-500">
+                                    This folder is empty
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function fileManager() {
+    return {
+        showUpload: false,
+        showNewFolder: false,
+        selectedFiles: [],
+        newFolderName: '',
+        
+        handleFileSelect(event) {
+            this.selectedFiles = Array.from(event.target.files);
+        },
+        
+        async uploadFiles() {
+            if (this.selectedFiles.length === 0) return;
+            
+            const formData = new FormData();
+            formData.append('path', '{{ currentPath }}');
+            formData.append('_token', '{{ csrf_token() }}');
+            
+            this.selectedFiles.forEach(file => {
+                formData.append('files[]', file);
+            });
+            
+            try {
+                const response = await fetch('/admin/filemanager/{{ account.id }}/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    window.location.reload();
+                } else {
+                    alert('Upload failed: ' + data.error);
+                }
+            } catch (error) {
+                alert('Upload failed: ' + error.message);
+            }
+        },
+        
+        async createFolder() {
+            if (!this.newFolderName) return;
+            
+            const formData = new FormData();
+            formData.append('path', '{{ currentPath }}');
+            formData.append('name', this.newFolderName);
+            formData.append('_token', '{{ csrf_token() }}');
+            
+            try {
+                const response = await fetch('/admin/filemanager/{{ account.id }}/folder', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    window.location.reload();
+                } else {
+                    alert('Failed to create folder: ' + data.error);
+                }
+            } catch (error) {
+                alert('Failed to create folder: ' + error.message);
+            }
+        },
+        
+        async deleteItem(path, name) {
+            if (!confirm(`Are you sure you want to delete "${name}"?`)) return;
+            
+            const formData = new FormData();
+            formData.append('path', path);
+            formData.append('_token', '{{ csrf_token() }}');
+            
+            try {
+                const response = await fetch('/admin/filemanager/{{ account.id }}/delete', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    window.location.reload();
+                } else {
+                    alert('Failed to delete: ' + data.error);
+                }
+            } catch (error) {
+                alert('Failed to delete: ' + error.message);
+            }
+        }
+    }
+}
+</script>
+{% endblock %}
