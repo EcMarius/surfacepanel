@@ -53,6 +53,7 @@
         "psr-4": {
             "VirPanel\\Core\\": "src/core/",
             "VirPanel\\Api\\": "src/api/",
+            "VirPanel\\Cli\\": "src/cli/",
             "VirPanel\\Modules\\": "src/modules/",
             "VirPanel\\Models\\": "src/models/",
             "VirPanel\\Services\\": "src/services/",
