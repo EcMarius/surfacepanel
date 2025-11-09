@@ -1,0 +1,291 @@
+{% extends "layouts/user.html.twig" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">Welcome, {{ account.username }}!</h1>
+        <p class="text-gray-600">{{ package.name }} Package</p>
+    </div>
+
+    <!-- Statistics Overview -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <!-- Disk Usage -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-900">Disk Usage</h3>
+                <svg class="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
+                </svg>
+            </div>
+            <div class="space-y-2">
+                <div class="flex justify-between text-sm">
+                    <span class="text-gray-600">Used:</span>
+                    <span class="font-semibold">{{ stats.disk_usage }} MB</span>
+                </div>
+                <div class="flex justify-between text-sm">
+                    <span class="text-gray-600">Limit:</span>
+                    <span class="font-semibold">{{ limits.disk_quota == -1 ? 'Unlimited' : limits.disk_quota ~ ' MB' }}</span>
+                </div>
+                {% if limits.disk_quota != -1 %}
+                <div class="mt-3">
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="bg-blue-600 h-2 rounded-full" style="width: {{ usage_percentages.disk }}%"></div>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">{{ usage_percentages.disk }}% used</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Bandwidth Usage -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-900">Bandwidth</h3>
+                <svg class="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+            </div>
+            <div class="space-y-2">
+                <div class="flex justify-between text-sm">
+                    <span class="text-gray-600">This Month:</span>
+                    <span class="font-semibold">{{ stats.bandwidth_usage }} MB</span>
+                </div>
+                <div class="flex justify-between text-sm">
+                    <span class="text-gray-600">Limit:</span>
+                    <span class="font-semibold">{{ limits.bandwidth_quota == -1 ? 'Unlimited' : limits.bandwidth_quota ~ ' MB' }}</span>
+                </div>
+                {% if limits.bandwidth_quota != -1 %}
+                <div class="mt-3">
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="bg-green-600 h-2 rounded-full" style="width: {{ usage_percentages.bandwidth }}%"></div>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">{{ usage_percentages.bandwidth }}% used</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Email Accounts -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-900">Email Accounts</h3>
+                <svg class="w-8 h-8 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+            </div>
+            <div class="space-y-2">
+                <div class="flex justify-between text-sm">
+                    <span class="text-gray-600">Active:</span>
+                    <span class="font-semibold">{{ stats.email_accounts }}</span>
+                </div>
+                <div class="flex justify-between text-sm">
+                    <span class="text-gray-600">Limit:</span>
+                    <span class="font-semibold">{{ limits.email_accounts == -1 ? 'Unlimited' : limits.email_accounts }}</span>
+                </div>
+                {% if limits.email_accounts != -1 %}
+                <div class="mt-3">
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="bg-purple-600 h-2 rounded-full" style="width: {{ usage_percentages.email_accounts }}%"></div>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">{{ usage_percentages.email_accounts }}% used</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Databases -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-900">Databases</h3>
+                <svg class="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+                </svg>
+            </div>
+            <div class="space-y-2">
+                <div class="flex justify-between text-sm">
+                    <span class="text-gray-600">Created:</span>
+                    <span class="font-semibold">{{ stats.databases }}</span>
+                </div>
+                <div class="flex justify-between text-sm">
+                    <span class="text-gray-600">Limit:</span>
+                    <span class="font-semibold">{{ limits.databases == -1 ? 'Unlimited' : limits.databases }}</span>
+                </div>
+                {% if limits.databases != -1 %}
+                <div class="mt-3">
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="bg-orange-600 h-2 rounded-full" style="width: {{ usage_percentages.databases }}%"></div>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">{{ usage_percentages.databases }}% used</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Additional Statistics -->
+    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-8">
+        <!-- FTP Accounts -->
+        <div class="bg-white rounded-lg shadow-sm p-4 text-center">
+            <div class="text-2xl font-bold text-blue-600">{{ stats.ftp_accounts }}</div>
+            <div class="text-xs text-gray-600 mt-1">FTP Accounts</div>
+        </div>
+
+        <!-- Addon Domains -->
+        <div class="bg-white rounded-lg shadow-sm p-4 text-center">
+            <div class="text-2xl font-bold text-green-600">{{ stats.domains }}</div>
+            <div class="text-xs text-gray-600 mt-1">Addon Domains</div>
+        </div>
+
+        <!-- Subdomains -->
+        <div class="bg-white rounded-lg shadow-sm p-4 text-center">
+            <div class="text-2xl font-bold text-purple-600">{{ stats.subdomains }}</div>
+            <div class="text-xs text-gray-600 mt-1">Subdomains</div>
+        </div>
+
+        <!-- Parked Domains -->
+        <div class="bg-white rounded-lg shadow-sm p-4 text-center">
+            <div class="text-2xl font-bold text-orange-600">{{ stats.parked_domains }}</div>
+            <div class="text-xs text-gray-600 mt-1">Parked Domains</div>
+        </div>
+
+        <!-- SSL Certificates -->
+        <div class="bg-white rounded-lg shadow-sm p-4 text-center">
+            <div class="text-2xl font-bold text-indigo-600">{{ stats.ssl_certificates }}</div>
+            <div class="text-xs text-gray-600 mt-1">SSL Certificates</div>
+        </div>
+
+        <!-- Cron Jobs -->
+        <div class="bg-white rounded-lg shadow-sm p-4 text-center">
+            <div class="text-2xl font-bold text-red-600">{{ stats.cron_jobs }}</div>
+            <div class="text-xs text-gray-600 mt-1">Cron Jobs</div>
+        </div>
+
+        <!-- Backups -->
+        <div class="bg-white rounded-lg shadow-sm p-4 text-center">
+            <div class="text-2xl font-bold text-teal-600">{{ stats.backups }}</div>
+            <div class="text-xs text-gray-600 mt-1">Backups</div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Quick Shortcuts -->
+        <div class="lg:col-span-2">
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">Quick Shortcuts</h2>
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <a href="/user/filemanager" class="flex flex-col items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                        <svg class="w-10 h-10 text-blue-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                        </svg>
+                        <span class="text-sm font-medium text-gray-900">File Manager</span>
+                    </a>
+
+                    <a href="/user/email" class="flex flex-col items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                        <svg class="w-10 h-10 text-purple-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                        <span class="text-sm font-medium text-gray-900">Email</span>
+                    </a>
+
+                    <a href="/user/databases" class="flex flex-col items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                        <svg class="w-10 h-10 text-orange-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
+                        </svg>
+                        <span class="text-sm font-medium text-gray-900">Databases</span>
+                    </a>
+
+                    <a href="/user/domains" class="flex flex-col items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                        <svg class="w-10 h-10 text-green-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                        </svg>
+                        <span class="text-sm font-medium text-gray-900">Domains</span>
+                    </a>
+
+                    <a href="/user/ssl" class="flex flex-col items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                        <svg class="w-10 h-10 text-indigo-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>
+                        <span class="text-sm font-medium text-gray-900">SSL/TLS</span>
+                    </a>
+
+                    <a href="/user/backup" class="flex flex-col items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                        <svg class="w-10 h-10 text-teal-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        <span class="text-sm font-medium text-gray-900">Backups</span>
+                    </a>
+
+                    <a href="/user/ftp" class="flex flex-col items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                        <svg class="w-10 h-10 text-red-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <span class="text-sm font-medium text-gray-900">FTP Accounts</span>
+                    </a>
+
+                    <a href="/user/dns" class="flex flex-col items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                        <svg class="w-10 h-10 text-yellow-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
+                        </svg>
+                        <span class="text-sm font-medium text-gray-900">DNS Zones</span>
+                    </a>
+
+                    <a href="/user/cron" class="flex flex-col items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                        <svg class="w-10 h-10 text-pink-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span class="text-sm font-medium text-gray-900">Cron Jobs</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity & System Info -->
+        <div class="space-y-6">
+            <!-- System Information -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">System Information</h2>
+                <div class="space-y-3">
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-600">PHP Version:</span>
+                        <span class="font-medium">{{ system_info.php_version }}</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-600">MySQL Version:</span>
+                        <span class="font-medium">{{ system_info.mysql_version }}</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-600">Server Load:</span>
+                        <span class="font-medium text-xs">{{ system_info.server_load }}</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-600">Uptime:</span>
+                        <span class="font-medium text-xs">{{ system_info.server_uptime }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">Recent Activity</h2>
+                {% if recent_activity|length > 0 %}
+                <div class="space-y-3">
+                    {% for activity in recent_activity %}
+                    <div class="flex items-start space-x-3 text-sm">
+                        <div class="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                        <div class="flex-1">
+                            <p class="text-gray-900">{{ activity.description }}</p>
+                            <p class="text-xs text-gray-500 mt-1">{{ activity.created_at|date('M d, Y H:i') }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-gray-500 text-sm">No recent activity</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

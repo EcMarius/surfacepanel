@@ -9,6 +9,7 @@
 use VirPanel\Core\Http\WebRouter;
 use VirPanel\Core\Http\Controllers\AuthController;
 use VirPanel\Core\Http\Controllers\AdminDashboardController;
+use VirPanel\Core\Http\Controllers\UserDashboardController;
 use VirPanel\Core\Http\Controllers\AccountController;
 use VirPanel\Core\Http\Controllers\PackageController;
 use VirPanel\Core\Http\Controllers\CloudflareController;
@@ -146,6 +147,9 @@ return function (WebRouter $router) {
     $router->post('/admin/templates/{name}/activate', [TemplateController::class, 'activate'], [AuthenticateMiddleware::class]);
     $router->post('/admin/templates/{name}/uninstall', [TemplateController::class, 'uninstall'], [AuthenticateMiddleware::class]);
     $router->get('/admin/templates/{name}/preview', [TemplateController::class, 'preview'], [AuthenticateMiddleware::class]);
+
+    // User Dashboard
+    $router->get('/user/dashboard', [UserDashboardController::class, 'index'], [AuthenticateMiddleware::class]);
 
     // Template Selection (User)
     $router->get('/user/templates', [TemplateController::class, 'userIndex'], [AuthenticateMiddleware::class]);
