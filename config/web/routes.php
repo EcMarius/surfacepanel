@@ -18,6 +18,7 @@ use VirPanel\Core\Http\Controllers\ModuleController;
 use VirPanel\Core\Http\Controllers\TemplateController;
 use VirPanel\Core\Http\Controllers\DomainController;
 use VirPanel\Core\Http\Controllers\EmailController;
+use VirPanel\Core\Http\Controllers\DatabaseController;
 use VirPanel\Core\Http\Middleware\GuestMiddleware;
 use VirPanel\Core\Http\Middleware\AuthenticateMiddleware;
 use VirPanel\Core\Http\Middleware\CsrfMiddleware;
@@ -130,6 +131,16 @@ return function (WebRouter $router) {
     $router->post('/user/email/forwarders/{id}/delete', [EmailController::class, 'deleteForwarder'], [AuthenticateMiddleware::class]);
     $router->post('/user/email/autoresponders', [EmailController::class, 'storeAutoresponder'], [AuthenticateMiddleware::class]);
     $router->post('/user/email/autoresponders/{id}/delete', [EmailController::class, 'deleteAutoresponder'], [AuthenticateMiddleware::class]);
+
+    // Database Management (User)
+    $router->get('/user/databases', [DatabaseController::class, 'index'], [AuthenticateMiddleware::class]);
+    $router->post('/user/databases/create', [DatabaseController::class, 'storeDatabase'], [AuthenticateMiddleware::class]);
+    $router->post('/user/databases/{id}/delete', [DatabaseController::class, 'deleteDatabase'], [AuthenticateMiddleware::class]);
+    $router->post('/user/databases/users/create', [DatabaseController::class, 'storeUser'], [AuthenticateMiddleware::class]);
+    $router->post('/user/databases/users/{id}/password', [DatabaseController::class, 'updateUserPassword'], [AuthenticateMiddleware::class]);
+    $router->post('/user/databases/users/{id}/delete', [DatabaseController::class, 'deleteUser'], [AuthenticateMiddleware::class]);
+    $router->post('/user/databases/privileges/grant', [DatabaseController::class, 'addUserToDatabase'], [AuthenticateMiddleware::class]);
+    $router->post('/user/databases/privileges/{id}/revoke', [DatabaseController::class, 'removeUserFromDatabase'], [AuthenticateMiddleware::class]);
 
     // Redirect root to appropriate dashboard
     $router->get('/', function($request) {

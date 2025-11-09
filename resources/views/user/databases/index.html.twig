@@ -1,0 +1,397 @@
+{% extends 'layouts/user.html.twig' %}
+
+{% block title %}Database Management{% endblock %}
+
+{% block content %}
+<div class="px-4 sm:px-6 lg:px-8" x-data="{ tab: 'databases' }">
+    <div class="sm:flex sm:items-center">
+        <div class="sm:flex-auto">
+            <h1 class="text-2xl font-semibold text-gray-900">MySQL Databases</h1>
+            <p class="mt-2 text-sm text-gray-700">Create and manage MySQL databases and users</p>
+        </div>
+    </div>
+
+    {% if app.session.get('success') %}
+    <div class="mt-4 rounded-md bg-green-50 p-4">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" />
+                </svg>
+            </div>
+            <div class="ml-3">
+                <p class="text-sm font-medium text-green-800">{{ app.session.get('success') }}</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if app.session.get('error') %}
+    <div class="mt-4 rounded-md bg-red-50 p-4">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" />
+                </svg>
+            </div>
+            <div class="ml-3">
+                <p class="text-sm font-medium text-red-800">{{ app.session.get('error') }}</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Stats -->
+    <div class="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-3">
+        <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
+            <dt class="truncate text-sm font-medium text-gray-500">Databases</dt>
+            <dd class="mt-1 text-3xl font-semibold tracking-tight text-gray-900">{{ databases | length }}</dd>
+        </div>
+        <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
+            <dt class="truncate text-sm font-medium text-gray-500">Database Users</dt>
+            <dd class="mt-1 text-3xl font-semibold tracking-tight text-gray-900">{{ dbUsers | length }}</dd>
+        </div>
+        <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
+            <dt class="truncate text-sm font-medium text-gray-500">User Mappings</dt>
+            <dd class="mt-1 text-3xl font-semibold tracking-tight text-gray-900">{{ userDatabases | length }}</dd>
+        </div>
+    </div>
+
+    <!-- Naming Info -->
+    <div class="mt-6 bg-blue-50 rounded-lg p-4">
+        <div class="flex">
+            <svg class="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clip-rule="evenodd" />
+            </svg>
+            <p class="ml-3 text-sm text-blue-700">
+                Your database and user names will be prefixed with <strong>{{ accountUsername }}_</strong> for security and organization.
+            </p>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="mt-8">
+        <div class="border-b border-gray-200">
+            <nav class="-mb-px flex space-x-8">
+                <button @click="tab = 'databases'" :class="tab === 'databases' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'" class="whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium">
+                    Databases ({{ databases | length }})
+                </button>
+                <button @click="tab = 'users'" :class="tab === 'users' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'" class="whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium">
+                    Database Users ({{ dbUsers | length }})
+                </button>
+                <button @click="tab = 'privileges'" :class="tab === 'privileges' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'" class="whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium">
+                    User Privileges ({{ userDatabases | length }})
+                </button>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Databases Tab -->
+    <div x-show="tab === 'databases'" class="mt-6">
+        <div class="mb-4">
+            <button @click="$refs.databaseForm.classList.toggle('hidden')" class="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500">
+                Create Database
+            </button>
+        </div>
+
+        <!-- Create Database Form -->
+        <div ref="databaseForm" class="hidden mb-6 bg-white shadow sm:rounded-lg p-6">
+            <h3 class="text-lg font-medium mb-4">Create MySQL Database</h3>
+            <form action="/user/databases/create" method="POST">
+                {{ csrf_field() | raw }}
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Database Name *</label>
+                    <div class="mt-1 flex rounded-md shadow-sm">
+                        <span class="inline-flex items-center rounded-l-md border border-r-0 border-gray-300 bg-gray-50 px-3 text-sm text-gray-500">
+                            {{ accountUsername }}_
+                        </span>
+                        <input type="text" name="database_name" required pattern="[a-z0-9_]+" placeholder="mydb" class="block w-full rounded-none rounded-r-md border-gray-300 focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                    </div>
+                    <p class="mt-1 text-xs text-gray-500">Only lowercase letters, numbers and underscores allowed</p>
+                </div>
+                <div class="mt-4 flex gap-3">
+                    <button type="submit" class="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500">
+                        Create Database
+                    </button>
+                    <button type="button" @click="$refs.databaseForm.classList.add('hidden')" class="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Databases List -->
+        {% if databases %}
+        <div class="overflow-hidden bg-white shadow sm:rounded-lg">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Database Name</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Size</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Created</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 bg-white">
+                    {% for database in databases %}
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ database.database_name }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ (database.size / 1024 / 1024) | round(2) }} MB
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <span class="inline-flex rounded-full bg-green-100 px-2 text-xs font-semibold text-green-800">{{ database.status }}</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ database.created_at | date('M d, Y') }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm space-x-3">
+                            <a href="/phpmyadmin?db={{ database.database_name }}" target="_blank" class="text-blue-600 hover:text-blue-900">phpMyAdmin</a>
+                            <form action="/user/databases/{{ database.id }}/delete" method="POST" class="inline" onsubmit="return confirm('Delete database {{ database.database_name }}? This cannot be undone!');">
+                                {{ csrf_field() | raw }}
+                                <button type="submit" class="text-red-600 hover:text-red-900">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-12 bg-white rounded-lg shadow">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75C20.25 16.153 16.556 18 12 18s-8.25-1.847-8.25-4.125v-3.75m16.5 0c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125" />
+            </svg>
+            <p class="mt-2 text-sm text-gray-500">No databases yet. Create one to get started.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Database Users Tab -->
+    <div x-show="tab === 'users'" class="mt-6">
+        <div class="mb-4">
+            <button @click="$refs.userForm.classList.toggle('hidden')" class="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500">
+                Create Database User
+            </button>
+        </div>
+
+        <!-- Create User Form -->
+        <div ref="userForm" class="hidden mb-6 bg-white shadow sm:rounded-lg p-6">
+            <h3 class="text-lg font-medium mb-4">Create Database User</h3>
+            <form action="/user/databases/users/create" method="POST">
+                {{ csrf_field() | raw }}
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Username *</label>
+                        <div class="mt-1 flex rounded-md shadow-sm">
+                            <span class="inline-flex items-center rounded-l-md border border-r-0 border-gray-300 bg-gray-50 px-3 text-sm text-gray-500">
+                                {{ accountUsername }}_
+                            </span>
+                            <input type="text" name="username" required pattern="[a-z0-9_]+" placeholder="dbuser" class="block w-full rounded-none rounded-r-md border-gray-300 focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                        </div>
+                        <p class="mt-1 text-xs text-gray-500">Max 32 characters total</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Host</label>
+                        <select name="host" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                            <option value="localhost">localhost</option>
+                            <option value="any">Any host (%)</option>
+                        </select>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700">Password *</label>
+                        <input type="password" name="password" required minlength="8" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                        <p class="mt-1 text-xs text-gray-500">Minimum 8 characters</p>
+                    </div>
+                </div>
+                <div class="mt-4 flex gap-3">
+                    <button type="submit" class="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500">
+                        Create User
+                    </button>
+                    <button type="button" @click="$refs.userForm.classList.add('hidden')" class="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Users List -->
+        {% if dbUsers %}
+        <div class="overflow-hidden bg-white shadow sm:rounded-lg">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Username</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Host</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Created</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 bg-white">
+                    {% for user in dbUsers %}
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ user.username }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ user.host }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <span class="inline-flex rounded-full bg-green-100 px-2 text-xs font-semibold text-green-800">{{ user.status }}</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ user.created_at | date('M d, Y') }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm space-x-3">
+                            <button onclick="changeUserPassword({{ user.id }})" class="text-blue-600 hover:text-blue-900">Change Password</button>
+                            <form action="/user/databases/users/{{ user.id }}/delete" method="POST" class="inline" onsubmit="return confirm('Delete user {{ user.username }}?');">
+                                {{ csrf_field() | raw }}
+                                <button type="submit" class="text-red-600 hover:text-red-900">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-12 bg-white rounded-lg shadow">
+            <p class="text-sm text-gray-500">No database users yet. Create one to get started.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- User Privileges Tab -->
+    <div x-show="tab === 'privileges'" class="mt-6">
+        <div class="mb-4">
+            <button @click="$refs.privilegeForm.classList.toggle('hidden')" class="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500">
+                Grant User Access
+            </button>
+        </div>
+
+        <!-- Grant Access Form -->
+        <div ref="privilegeForm" class="hidden mb-6 bg-white shadow sm:rounded-lg p-6">
+            <h3 class="text-lg font-medium mb-4">Grant User Access to Database</h3>
+            <form action="/user/databases/privileges/grant" method="POST">
+                {{ csrf_field() | raw }}
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Database User *</label>
+                        <select name="user_id" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                            <option value="">Select User</option>
+                            {% for user in dbUsers %}
+                            <option value="{{ user.id }}">{{ user.username }}@{{ user.host }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Database *</label>
+                        <select name="database_id" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                            <option value="">Select Database</option>
+                            {% for database in databases %}
+                            <option value="{{ database.id }}">{{ database.database_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Privileges (leave empty for ALL)</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <label class="flex items-center">
+                                <input type="checkbox" name="privileges[]" value="SELECT" class="rounded border-gray-300 text-blue-600">
+                                <span class="ml-2 text-sm text-gray-700">SELECT</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" name="privileges[]" value="INSERT" class="rounded border-gray-300 text-blue-600">
+                                <span class="ml-2 text-sm text-gray-700">INSERT</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" name="privileges[]" value="UPDATE" class="rounded border-gray-300 text-blue-600">
+                                <span class="ml-2 text-sm text-gray-700">UPDATE</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" name="privileges[]" value="DELETE" class="rounded border-gray-300 text-blue-600">
+                                <span class="ml-2 text-sm text-gray-700">DELETE</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-4 flex gap-3">
+                    <button type="submit" class="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500">
+                        Grant Access
+                    </button>
+                    <button type="button" @click="$refs.privilegeForm.classList.add('hidden')" class="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Privileges List -->
+        {% if userDatabases %}
+        <div class="overflow-hidden bg-white shadow sm:rounded-lg">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Database</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Privileges</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 bg-white">
+                    {% for mapping in userDatabases %}
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ mapping.db_username }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ mapping.database_name }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-500">
+                            {% if mapping.privileges %}
+                                {{ mapping.privileges | json_decode | join(', ') }}
+                            {% else %}
+                                ALL PRIVILEGES
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
+                            <form action="/user/databases/privileges/{{ mapping.id }}/revoke" method="POST" class="inline" onsubmit="return confirm('Revoke access?');">
+                                {{ csrf_field() | raw }}
+                                <button type="submit" class="text-red-600 hover:text-red-900">Revoke</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-12 bg-white rounded-lg shadow">
+            <p class="text-sm text-gray-500">No user privileges granted yet. Grant access to get started.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function changeUserPassword(userId) {
+    const password = prompt('Enter new password (minimum 8 characters):');
+    if (password && password.length >= 8) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/user/databases/users/${userId}/password`;
+
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = '_token';
+        csrfInput.value = '{{ csrf_token() }}';
+
+        const passwordInput = document.createElement('input');
+        passwordInput.type = 'hidden';
+        passwordInput.name = 'password';
+        passwordInput.value = password;
+
+        form.appendChild(csrfInput);
+        form.appendChild(passwordInput);
+        document.body.appendChild(form);
+        form.submit();
+    } else if (password) {
+        alert('Password must be at least 8 characters');
+    }
+}
+</script>
+{% endblock %}
