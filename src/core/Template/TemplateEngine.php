@@ -176,6 +176,20 @@ class TemplateEngine
             'version' => '0.1.0',
             'url' => config('app.url', ''),
             'debug' => config('app.debug', false),
+            'session' => new class {
+                public function get($key, $default = null) {
+                    $value = $_SESSION[$key] ?? $default;
+                    // Clear flash messages after retrieval
+                    if (in_array($key, ['success', 'error', 'errors', 'old'])) {
+                        unset($_SESSION[$key]);
+                    }
+                    return $value;
+                }
+
+                public function has($key) {
+                    return isset($_SESSION[$key]);
+                }
+            },
         ]);
 
         $this->twig->addGlobal('theme', $this->theme);

@@ -9,6 +9,7 @@
 use VirPanel\Core\Http\WebRouter;
 use VirPanel\Core\Http\Controllers\AuthController;
 use VirPanel\Core\Http\Controllers\AdminDashboardController;
+use VirPanel\Core\Http\Controllers\AccountController;
 use VirPanel\Core\Http\Middleware\GuestMiddleware;
 use VirPanel\Core\Http\Middleware\AuthenticateMiddleware;
 use VirPanel\Core\Http\Middleware\CsrfMiddleware;
@@ -35,6 +36,16 @@ return function (WebRouter $router) {
     // Admin dashboard
     $router->get('/admin/dashboard', [AdminDashboardController::class, 'index'], [AuthenticateMiddleware::class]);
     $router->get('/admin', [AdminDashboardController::class, 'index'], [AuthenticateMiddleware::class]);
+
+    // Account Management
+    $router->get('/admin/accounts', [AccountController::class, 'index'], [AuthenticateMiddleware::class]);
+    $router->get('/admin/accounts/create', [AccountController::class, 'create'], [AuthenticateMiddleware::class]);
+    $router->post('/admin/accounts', [AccountController::class, 'store'], [AuthenticateMiddleware::class]);
+    $router->get('/admin/accounts/{id}', [AccountController::class, 'show'], [AuthenticateMiddleware::class]);
+    $router->get('/admin/accounts/{id}/edit', [AccountController::class, 'edit'], [AuthenticateMiddleware::class]);
+    $router->post('/admin/accounts/{id}', [AccountController::class, 'update'], [AuthenticateMiddleware::class]);
+    $router->post('/admin/accounts/{id}/suspend', [AccountController::class, 'suspend'], [AuthenticateMiddleware::class]);
+    $router->post('/admin/accounts/{id}/unsuspend', [AccountController::class, 'unsuspend'], [AuthenticateMiddleware::class]);
 
     // Redirect root to appropriate dashboard
     $router->get('/', function($request) {
