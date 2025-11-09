@@ -19,6 +19,7 @@ use VirPanel\Core\Http\Controllers\TemplateController;
 use VirPanel\Core\Http\Controllers\DomainController;
 use VirPanel\Core\Http\Controllers\EmailController;
 use VirPanel\Core\Http\Controllers\DatabaseController;
+use VirPanel\Core\Http\Controllers\SSLController;
 use VirPanel\Core\Http\Middleware\GuestMiddleware;
 use VirPanel\Core\Http\Middleware\AuthenticateMiddleware;
 use VirPanel\Core\Http\Middleware\CsrfMiddleware;
@@ -141,6 +142,14 @@ return function (WebRouter $router) {
     $router->post('/user/databases/users/{id}/delete', [DatabaseController::class, 'deleteUser'], [AuthenticateMiddleware::class]);
     $router->post('/user/databases/privileges/grant', [DatabaseController::class, 'addUserToDatabase'], [AuthenticateMiddleware::class]);
     $router->post('/user/databases/privileges/{id}/revoke', [DatabaseController::class, 'removeUserFromDatabase'], [AuthenticateMiddleware::class]);
+
+    // SSL/TLS Management (User)
+    $router->get('/user/ssl', [SSLController::class, 'index'], [AuthenticateMiddleware::class]);
+    $router->post('/user/ssl/letsencrypt/issue', [SSLController::class, 'issueLetsEncrypt'], [AuthenticateMiddleware::class]);
+    $router->post('/user/ssl/upload', [SSLController::class, 'uploadCertificate'], [AuthenticateMiddleware::class]);
+    $router->post('/user/ssl/csr/generate', [SSLController::class, 'generateCSR'], [AuthenticateMiddleware::class]);
+    $router->post('/user/ssl/{id}/renew', [SSLController::class, 'renewCertificate'], [AuthenticateMiddleware::class]);
+    $router->post('/user/ssl/{id}/delete', [SSLController::class, 'deleteCertificate'], [AuthenticateMiddleware::class]);
 
     // Redirect root to appropriate dashboard
     $router->get('/', function($request) {
