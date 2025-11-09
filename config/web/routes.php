@@ -14,6 +14,7 @@ use VirPanel\Core\Http\Controllers\PackageController;
 use VirPanel\Core\Http\Controllers\CloudflareController;
 use VirPanel\Core\Http\Controllers\FileManagerController;
 use VirPanel\Core\Http\Controllers\ResellerController;
+use VirPanel\Core\Http\Controllers\ModuleController;
 use VirPanel\Core\Http\Middleware\GuestMiddleware;
 use VirPanel\Core\Http\Middleware\AuthenticateMiddleware;
 use VirPanel\Core\Http\Middleware\CsrfMiddleware;
@@ -85,6 +86,14 @@ return function (WebRouter $router) {
     $router->post('/admin/resellers/{id}', [ResellerController::class, 'update'], [AuthenticateMiddleware::class]);
     $router->post('/admin/resellers/{id}/suspend', [ResellerController::class, 'suspend'], [AuthenticateMiddleware::class]);
     $router->post('/admin/resellers/{id}/unsuspend', [ResellerController::class, 'unsuspend'], [AuthenticateMiddleware::class]);
+
+    // Module Management
+    $router->get('/admin/modules', [ModuleController::class, 'index'], [AuthenticateMiddleware::class]);
+    $router->post('/admin/modules/upload', [ModuleController::class, 'upload'], [AuthenticateMiddleware::class]);
+    $router->post('/admin/modules/{name}/enable', [ModuleController::class, 'enable'], [AuthenticateMiddleware::class]);
+    $router->post('/admin/modules/{name}/disable', [ModuleController::class, 'disable'], [AuthenticateMiddleware::class]);
+    $router->post('/admin/modules/{name}/uninstall', [ModuleController::class, 'uninstall'], [AuthenticateMiddleware::class]);
+    $router->get('/admin/modules/{name}/details', [ModuleController::class, 'details'], [AuthenticateMiddleware::class]);
 
     // Redirect root to appropriate dashboard
     $router->get('/', function($request) {
