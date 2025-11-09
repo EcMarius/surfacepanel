@@ -24,6 +24,7 @@ use VirPanel\Core\Http\Controllers\IPAddressController;
 use VirPanel\Core\Http\Controllers\DNSController;
 use VirPanel\Core\Http\Controllers\FTPController;
 use VirPanel\Core\Http\Controllers\CronController;
+use VirPanel\Core\Http\Controllers\BackupController;
 use VirPanel\Core\Http\Middleware\GuestMiddleware;
 use VirPanel\Core\Http\Middleware\AuthenticateMiddleware;
 use VirPanel\Core\Http\Middleware\CsrfMiddleware;
@@ -212,6 +213,13 @@ return function (WebRouter $router) {
     $router->post('/user/cron/{id}/toggle', [CronController::class, 'toggleStatus'], [AuthenticateMiddleware::class]);
     $router->post('/user/cron/{id}/delete', [CronController::class, 'delete'], [AuthenticateMiddleware::class]);
     $router->get('/user/cron/{id}/logs', [CronController::class, 'logs'], [AuthenticateMiddleware::class]);
+
+    // Backup Management (User)
+    $router->get('/user/backup', [BackupController::class, 'index'], [AuthenticateMiddleware::class]);
+    $router->post('/user/backup/create', [BackupController::class, 'create'], [AuthenticateMiddleware::class]);
+    $router->get('/user/backup/{id}/download', [BackupController::class, 'download'], [AuthenticateMiddleware::class]);
+    $router->post('/user/backup/{id}/restore', [BackupController::class, 'restore'], [AuthenticateMiddleware::class]);
+    $router->post('/user/backup/{id}/delete', [BackupController::class, 'delete'], [AuthenticateMiddleware::class]);
 
     // Redirect root to appropriate dashboard
     $router->get('/', function($request) {

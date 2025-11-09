@@ -1,0 +1,268 @@
+{% extends "layouts/user.html.twig" %}
+
+{% block title %}Backup Manager - VirPanel{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-800">Backup Manager</h1>
+        <p class="text-gray-600 mt-2">Create, download, and restore backups of your account</p>
+    </div>
+
+    <!-- Success/Error Messages -->
+    {% if session_has('success') %}
+    <div class="bg-green-50 border-l-4 border-green-400 p-4 mb-6">
+        <p class="text-green-700">{{ session_get('success') }}</p>
+    </div>
+    {% endif %}
+
+    {% if session_has('error') %}
+    <div class="bg-red-50 border-l-4 border-red-400 p-4 mb-6">
+        <p class="text-red-700">{{ session_get('error') }}</p>
+    </div>
+    {% endif %}
+
+    <!-- Backup Statistics -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Total Backups</p>
+                    <p class="text-3xl font-bold text-gray-900 mt-1">{{ backups|length }}</p>
+                </div>
+                <div class="p-3 bg-blue-100 rounded-full">
+                    <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Total Size</p>
+                    <p class="text-3xl font-bold text-gray-900 mt-1">{{ (total_size / 1024 / 1024)|round(2) }} MB</p>
+                </div>
+                <div class="p-3 bg-green-100 rounded-full">
+                    <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"></path>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Last Backup</p>
+                    <p class="text-xl font-bold text-gray-900 mt-1">
+                        {% if backups is not empty %}
+                        {{ backups[0].created_at|date('M d, Y') }}
+                        {% else %}
+                        Never
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="p-3 bg-purple-100 rounded-full">
+                    <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Info Box -->
+    <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
+        <div class="flex items-start">
+            <svg class="w-6 h-6 text-blue-500 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <div>
+                <h3 class="text-lg font-semibold text-blue-900 mb-2">About Backups</h3>
+                <p class="text-blue-800 mb-2">
+                    Regular backups protect your data from accidental deletion, server issues, or security incidents. Download backups to your local computer for extra safety.
+                </p>
+                <p class="text-blue-700 text-sm">
+                    <strong>Note:</strong> Backup creation may take several minutes depending on the size of your account.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Backup Form -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+        <h2 class="text-xl font-semibold mb-4">Create New Backup</h2>
+
+        <form method="POST" action="/user/backup/create" class="space-y-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Backup Type *</label>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <label class="relative flex items-center p-4 border-2 border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 transition">
+                        <input type="radio" name="type" value="full" required class="mr-3">
+                        <div>
+                            <div class="font-medium text-gray-900">Full Backup</div>
+                            <div class="text-xs text-gray-500">Everything</div>
+                        </div>
+                    </label>
+
+                    <label class="relative flex items-center p-4 border-2 border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 transition">
+                        <input type="radio" name="type" value="files" class="mr-3">
+                        <div>
+                            <div class="font-medium text-gray-900">Files Only</div>
+                            <div class="text-xs text-gray-500">public_html</div>
+                        </div>
+                    </label>
+
+                    <label class="relative flex items-center p-4 border-2 border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 transition">
+                        <input type="radio" name="type" value="databases" class="mr-3">
+                        <div>
+                            <div class="font-medium text-gray-900">Databases</div>
+                            <div class="text-xs text-gray-500">MySQL dumps</div>
+                        </div>
+                    </label>
+
+                    <label class="relative flex items-center p-4 border-2 border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 transition">
+                        <input type="radio" name="type" value="email" class="mr-3">
+                        <div>
+                            <div class="font-medium text-gray-900">Email Only</div>
+                            <div class="text-xs text-gray-500">Mailboxes</div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition">
+                <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                </svg>
+                Create Backup
+            </button>
+        </form>
+    </div>
+
+    <!-- Existing Backups -->
+    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-xl font-semibold">Your Backups</h2>
+        </div>
+
+        {% if backups is empty %}
+        <div class="p-8 text-center text-gray-500">
+            <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path>
+            </svg>
+            <p>No backups created yet</p>
+            <p class="text-sm mt-2">Create your first backup to protect your data</p>
+        </div>
+        {% else %}
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Filename</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Size</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for backup in backups %}
+                    <tr>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center">
+                                <svg class="w-5 h-5 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                                <span class="text-sm font-medium text-gray-900">{{ backup.filename }}</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 py-1 text-xs font-semibold rounded {% if backup.type == 'full' %}bg-purple-100 text-purple-800{% elseif backup.type == 'files' %}bg-blue-100 text-blue-800{% elseif backup.type == 'databases' %}bg-green-100 text-green-800{% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                                {{ backup.type|upper }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {% if backup.size > 0 %}
+                            {{ (backup.size / 1024 / 1024)|round(2) }} MB
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            {% if backup.status == 'completed' %}
+                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Completed</span>
+                            {% elseif backup.status == 'pending' %}
+                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending</span>
+                            {% elseif backup.status == 'failed' %}
+                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Failed</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ backup.created_at|date('M d, Y H:i') }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <div class="flex space-x-3">
+                                {% if backup.status == 'completed' %}
+                                <a href="/user/backup/{{ backup.id }}/download" class="text-blue-600 hover:text-blue-900">
+                                    <svg class="w-5 h-5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                                    </svg>
+                                </a>
+                                <form method="POST" action="/user/backup/{{ backup.id }}/restore" class="inline" onsubmit="return confirm('Restore from this backup? This will overwrite existing data.')">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="text-green-600 hover:text-green-900">
+                                        <svg class="w-5 h-5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                        </svg>
+                                    </button>
+                                </form>
+                                {% endif %}
+                                <form method="POST" action="/user/backup/{{ backup.id }}/delete" class="inline" onsubmit="return confirm('Delete this backup?')">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="text-red-600 hover:text-red-900">
+                                        <svg class="w-5 h-5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                        </svg>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Backup Information -->
+    <div class="mt-8 bg-gray-50 rounded-lg p-6">
+        <h3 class="text-lg font-semibold mb-4">Backup Types Explained</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div>
+                <h4 class="font-medium text-gray-700 mb-2">Full Backup</h4>
+                <p class="text-gray-600">Includes all files, databases, and email. This is the most comprehensive option and recommended for complete data protection.</p>
+            </div>
+            <div>
+                <h4 class="font-medium text-gray-700 mb-2">Files Only</h4>
+                <p class="text-gray-600">Backs up your website files from public_html directory. Use this for quick website backups.</p>
+            </div>
+            <div>
+                <h4 class="font-medium text-gray-700 mb-2">Databases</h4>
+                <p class="text-gray-600">Creates SQL dumps of all your MySQL databases. Important for content management systems like WordPress.</p>
+            </div>
+            <div>
+                <h4 class="font-medium text-gray-700 mb-2">Email Only</h4>
+                <p class="text-gray-600">Backs up all email accounts and messages. Use this to preserve your email data separately.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
