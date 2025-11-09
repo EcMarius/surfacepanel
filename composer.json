@@ -1,0 +1,88 @@
+{
+    "name": "surfacepanel/surfacepanel",
+    "description": "SurfacePanel - Modern Web Hosting Control Panel",
+    "type": "project",
+    "license": "proprietary",
+    "version": "0.1.0",
+    "authors": [
+        {
+            "name": "SurfacePanel Team",
+            "email": "team@surfacepanel.com"
+        }
+    ],
+    "require": {
+        "php": "^8.1",
+        "ext-json": "*",
+        "ext-pdo": "*",
+        "ext-mbstring": "*",
+        "ext-openssl": "*",
+        "ext-curl": "*",
+        "ext-zip": "*",
+        "symfony/console": "^6.0",
+        "symfony/http-foundation": "^6.0",
+        "symfony/routing": "^6.0",
+        "symfony/config": "^6.0",
+        "symfony/dependency-injection": "^6.0",
+        "symfony/event-dispatcher": "^6.0",
+        "doctrine/dbal": "^3.6",
+        "doctrine/orm": "^2.14",
+        "twig/twig": "^3.5",
+        "monolog/monolog": "^3.3",
+        "vlucas/phpdotenv": "^5.5",
+        "firebase/php-jwt": "^6.4",
+        "league/oauth2-server": "^8.5",
+        "ramsey/uuid": "^4.7",
+        "symfony/cache": "^6.0",
+        "predis/predis": "^2.1",
+        "guzzlehttp/guzzle": "^7.5",
+        "league/flysystem": "^3.12",
+        "league/flysystem-aws-s3-v3": "^3.12",
+        "intervention/image": "^2.7",
+        "phpmailer/phpmailer": "^6.8",
+        "swiftmailer/swiftmailer": "^6.3",
+        "webmozart/assert": "^1.11"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^10.0",
+        "mockery/mockery": "^1.5",
+        "fakerphp/faker": "^1.21",
+        "phpstan/phpstan": "^1.10",
+        "squizlabs/php_codesniffer": "^3.7"
+    },
+    "autoload": {
+        "psr-4": {
+            "SurfacePanel\\Core\\": "src/core/",
+            "SurfacePanel\\Api\\": "src/api/",
+            "SurfacePanel\\Modules\\": "src/modules/",
+            "SurfacePanel\\Services\\": "src/services/",
+            "SurfacePanel\\Database\\": "src/database/",
+            "SurfacePanel\\Utils\\": "src/utils/"
+        },
+        "files": [
+            "src/core/helpers.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "SurfacePanel\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "post-install-cmd": [
+            "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""
+        ],
+        "test": "phpunit",
+        "stan": "phpstan analyse",
+        "cs": "phpcs"
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "preferred-install": "dist",
+        "sort-packages": true,
+        "allow-plugins": {
+            "symfony/flex": true
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
