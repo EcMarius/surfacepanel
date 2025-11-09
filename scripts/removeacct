@@ -1,0 +1,182 @@
+#!/usr/bin/env php
+<?php
+
+/**
+ * Remove Account Script
+ *
+ * Removes a cPanel-style account
+ * Usage: removeacct username
+ */
+
+require_once __DIR__ . '/../vendor/autoload.php';
+
+use VirPanel\Core\Application;
+
+if ($argc < 2) {
+    echo <<<HELP
+Remove Account Script
+
+Usage: removeacct <username> [OPTIONS]
+
+Arguments:
+  username               Account username to remove (required)
+
+Options:
+  --force                Skip confirmation prompt
+  --keep-dns             Keep DNS records (default: remove all)
+  --help                 Show this help message
+
+Examples:
+  removeacct john
+  removeacct jane --force
+  removeacct testuser --keep-dns --force
+
+HELP;
+    exit($argv[1] ?? null === '--help' ? 0 : 1);
+}
+
+$username = $argv[1];
+$options = getopt('', ['force', 'keep-dns', 'help']);
+
+// Initialize application
+$app = Application::getInstance(__DIR__ . '/..');
+$db = $app->getContainer()->get('database');
+$prefix = config('database.prefix', 'vp_');
+
+try {
+    // Find account
+    $account = $db->fetchAssociative(
+        "SELECT * FROM {$prefix}accounts WHERE username = ?",
+        [$username]
+    );
+
+    if (!$account) {
+        echo "[ERROR] Account '{$username}' not found.\n";
+        exit(1);
+    }
+
+    echo "Account Information:\n";
+    echo "  Username:     {$account['username']}\n";
+    echo "  Domain:       {$account['domain']}\n";
+    echo "  Email:        {$account['email']}\n";
+    echo "  Status:       {$account['status']}\n";
+    echo "  Created:      {$account['created_at']}\n\n";
+
+    // Confirm deletion unless --force
+    if (!isset($options['force'])) {
+        echo "WARNING: This will permanently delete the account and all associated data!\n";
+        echo "This includes:\n";
+        echo "  - All domains and subdomains\n";
+        echo "  - All email accounts\n";
+        echo "  - All databases\n";
+        echo "  - All files in the home directory\n";
+        echo "  - All backups\n\n";
+
+        echo "Are you sure you want to remove '{$username}'? (yes/no): ";
+        $handle = fopen('php://stdin', 'r');
+        $line = trim(fgets($handle));
+        fclose($handle);
+
+        if (strtolower($line) !== 'yes') {
+            echo "[INFO] Account removal cancelled.\n";
+            exit(0);
+        }
+    }
+
+    echo "\n[INFO] Removing account '{$username}'...\n";
+
+    $db->beginTransaction();
+
+    // Get all associated data counts
+    $domainCount = $db->fetchOne(
+        "SELECT COUNT(*) FROM {$prefix}domains WHERE account_id = ?",
+        [$account['id']]
+    );
+
+    $emailCount = $db->fetchOne(
+        "SELECT COUNT(*) FROM {$prefix}email_accounts WHERE account_id = ?",
+        [$account['id']]
+    );
+
+    $databaseCount = $db->fetchOne(
+        "SELECT COUNT(*) FROM {$prefix}databases WHERE account_id = ?",
+        [$account['id']]
+    );
+
+    echo "[INFO] Found {$domainCount} domain(s), {$emailCount} email(s), {$databaseCount} database(s)\n";
+
+    // Delete associated data
+    echo "[INFO] Removing associated data...\n";
+
+    // Delete DNS records
+    if (!isset($options['keep-dns'])) {
+        $db->executeStatement(
+            "DELETE r FROM {$prefix}dns_records r
+             INNER JOIN {$prefix}dns_zones z ON r.zone_id = z.id
+             WHERE z.account_id = ?",
+            [$account['id']]
+        );
+        $db->executeStatement(
+            "DELETE FROM {$prefix}dns_zones WHERE account_id = ?",
+            [$account['id']]
+        );
+        echo "[INFO] DNS records removed\n";
+    }
+
+    // Delete domains (cascades to many related tables via foreign keys)
+    $db->delete($prefix . 'domains', ['account_id' => $account['id']]);
+    echo "[INFO] Domains removed\n";
+
+    // Delete email accounts
+    $db->delete($prefix . 'email_accounts', ['account_id' => $account['id']]);
+    $db->delete($prefix . 'email_forwarders', ['account_id' => $account['id']]);
+    echo "[INFO] Email accounts removed\n";
+
+    // Delete databases
+    $db->executeStatement(
+        "DELETE p FROM {$prefix}database_permissions p
+         INNER JOIN {$prefix}databases d ON p.database_id = d.id
+         WHERE d.account_id = ?",
+        [$account['id']]
+    );
+    $db->delete($prefix . 'database_users', ['account_id' => $account['id']]);
+    $db->delete($prefix . 'databases', ['account_id' => $account['id']]);
+    echo "[INFO] Databases removed\n";
+
+    // Delete FTP accounts
+    $db->delete($prefix . 'ftp_accounts', ['account_id' => $account['id']]);
+    echo "[INFO] FTP accounts removed\n";
+
+    // Delete SSL certificates
+    $db->delete($prefix . 'ssl_certificates', ['account_id' => $account['id']]);
+    echo "[INFO] SSL certificates removed\n";
+
+    // Delete backups
+    $db->delete($prefix . 'backups', ['account_id' => $account['id']]);
+    echo "[INFO] Backups removed\n";
+
+    // Delete cron jobs
+    $db->delete($prefix . 'cron_jobs', ['account_id' => $account['id']]);
+    echo "[INFO] Cron jobs removed\n";
+
+    // Finally, delete the account
+    $db->delete($prefix . 'accounts', ['id' => $account['id']]);
+
+    $db->commit();
+
+    echo "\n[SUCCESS] Account '{$username}' has been successfully removed!\n";
+
+    // TODO: Actually remove files from home directory
+    echo "[INFO] Note: Home directory cleanup should be performed manually: {$account['home_directory']}\n";
+
+    exit(0);
+} catch (\Throwable $e) {
+    if ($db->isTransactionActive()) {
+        $db->rollBack();
+    }
+
+    echo "[ERROR] Failed to remove account: " . $e->getMessage() . "\n";
+    echo "[DEBUG] " . $e->getFile() . ':' . $e->getLine() . "\n";
+
+    exit(1);
+}

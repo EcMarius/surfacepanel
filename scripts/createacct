@@ -1,0 +1,220 @@
+#!/usr/bin/env php
+<?php
+
+/**
+ * Create Account Script
+ *
+ * Creates a new cPanel-style account
+ * Usage: createacct --username=user --domain=example.com --package=starter
+ */
+
+require_once __DIR__ . '/../vendor/autoload.php';
+
+use VirPanel\Core\Application;
+use VirPanel\Database\Schema\Schema;
+
+// Parse command line arguments
+$options = getopt('', [
+    'username:',
+    'domain:',
+    'email:',
+    'password:',
+    'package:',
+    'reseller:',
+    'quota:',
+    'help',
+]);
+
+if (isset($options['help'])) {
+    echo <<<HELP
+Create Account Script
+
+Usage: createacct [OPTIONS]
+
+Options:
+  --username=USERNAME    Account username (required)
+  --domain=DOMAIN        Main domain (required)
+  --email=EMAIL          Contact email (required)
+  --password=PASSWORD    Account password (optional, will be generated if not provided)
+  --package=PACKAGE      Package name (default: starter)
+  --reseller=RESELLER    Reseller username (optional)
+  --quota=QUOTA          Disk quota in MB (optional, from package if not provided)
+  --help                 Show this help message
+
+Examples:
+  createacct --username=john --domain=example.com --email=john@example.com --package=professional
+  createacct --username=jane --domain=janedoe.com --email=jane@example.com --password=SecurePass123
+
+HELP;
+    exit(0);
+}
+
+// Validate required fields
+$errors = [];
+
+if (empty($options['username'])) {
+    $errors[] = 'Username is required (--username=username)';
+}
+
+if (empty($options['domain'])) {
+    $errors[] = 'Domain is required (--domain=example.com)';
+}
+
+if (empty($options['email'])) {
+    $errors[] = 'Email is required (--email=user@example.com)';
+}
+
+if (!empty($errors)) {
+    echo "[ERROR] Missing required fields:\n";
+    foreach ($errors as $error) {
+        echo "  - {$error}\n";
+    }
+    echo "\nRun with --help for usage information.\n";
+    exit(1);
+}
+
+// Initialize application
+$app = Application::getInstance(__DIR__ . '/..');
+$db = $app->getContainer()->get('database');
+$prefix = config('database.prefix', 'vp_');
+
+Schema::setConnection($db);
+
+try {
+    $username = $options['username'];
+    $domain = $options['domain'];
+    $email = $options['email'];
+    $password = $options['password'] ?? bin2hex(random_bytes(8));
+    $packageName = $options['package'] ?? 'starter';
+
+    echo "[INFO] Creating account for {$username}...\n";
+
+    // Check if username already exists
+    $exists = $db->fetchOne(
+        "SELECT COUNT(*) FROM {$prefix}accounts WHERE username = ?",
+        [$username]
+    );
+
+    if ($exists > 0) {
+        echo "[ERROR] Username '{$username}' already exists.\n";
+        exit(1);
+    }
+
+    // Check if domain already exists
+    $exists = $db->fetchOne(
+        "SELECT COUNT(*) FROM {$prefix}accounts WHERE domain = ?",
+        [$domain]
+    );
+
+    if ($exists > 0) {
+        echo "[ERROR] Domain '{$domain}' already exists.\n";
+        exit(1);
+    }
+
+    // Get package
+    $package = $db->fetchAssociative(
+        "SELECT * FROM {$prefix}packages WHERE name = ? AND is_active = 1",
+        [$packageName]
+    );
+
+    if (!$package) {
+        echo "[ERROR] Package '{$packageName}' not found or inactive.\n";
+        echo "[INFO] Available packages:\n";
+
+        $packages = $db->fetchAllAssociative(
+            "SELECT name, display_name FROM {$prefix}packages WHERE is_active = 1"
+        );
+
+        foreach ($packages as $pkg) {
+            echo "  - {$pkg['name']} ({$pkg['display_name']})\n";
+        }
+        exit(1);
+    }
+
+    // Get reseller if specified
+    $resellerId = null;
+    if (!empty($options['reseller'])) {
+        $reseller = $db->fetchAssociative(
+            "SELECT id FROM {$prefix}users WHERE username = ? AND role = 'reseller'",
+            [$options['reseller']]
+        );
+
+        if (!$reseller) {
+            echo "[WARNING] Reseller '{$options['reseller']}' not found. Creating account without reseller.\n";
+        } else {
+            $resellerId = $reseller['id'];
+        }
+    }
+
+    $db->beginTransaction();
+
+    // Create account
+    $accountData = [
+        'username' => $username,
+        'domain' => $domain,
+        'email' => $email,
+        'password' => password_hash($password, PASSWORD_ARGON2ID),
+        'package_id' => $package['id'],
+        'reseller_id' => $resellerId,
+        'home_directory' => '/home/' . $username,
+        'disk_quota' => $options['quota'] ?? $package['disk_quota'],
+        'bandwidth_quota' => $package['bandwidth_quota'],
+        'inodes_quota' => $package['inodes_quota'],
+        'shell_access' => $package['shell_access'],
+        'status' => 'active',
+        'theme' => 'default',
+        'locale' => 'en_US',
+        'timezone' => 'UTC',
+        'created_at' => date('Y-m-d H:i:s'),
+        'updated_at' => date('Y-m-d H:i:s'),
+    ];
+
+    $db->insert($prefix . 'accounts', $accountData);
+    $accountId = $db->lastInsertId();
+
+    echo "[INFO] Account created with ID: {$accountId}\n";
+
+    // Create main domain
+    $db->insert($prefix . 'domains', [
+        'account_id' => $accountId,
+        'domain' => $domain,
+        'type' => 'main',
+        'document_root' => '/home/' . $username . '/public_html',
+        'ssl_enabled' => false,
+        'autossl_enabled' => true,
+        'is_active' => true,
+        'created_at' => date('Y-m-d H:i:s'),
+        'updated_at' => date('Y-m-d H:i:s'),
+    ]);
+
+    echo "[INFO] Main domain created: {$domain}\n";
+
+    // Create home directory (placeholder - actual implementation would create real directories)
+    $homeDir = '/home/' . $username;
+    echo "[INFO] Home directory: {$homeDir}\n";
+
+    $db->commit();
+
+    echo "\n[SUCCESS] Account created successfully!\n\n";
+    echo "Account Details:\n";
+    echo "  Username:     {$username}\n";
+    echo "  Domain:       {$domain}\n";
+    echo "  Email:        {$email}\n";
+    echo "  Password:     {$password}\n";
+    echo "  Package:      {$package['display_name']}\n";
+    echo "  Home Dir:     {$homeDir}\n";
+    echo "  Disk Quota:   " . ($accountData['disk_quota'] == 0 ? 'Unlimited' : $accountData['disk_quota'] . ' MB') . "\n";
+    echo "  Bandwidth:    " . ($package['bandwidth_quota'] == 0 ? 'Unlimited' : $package['bandwidth_quota'] . ' MB') . "\n";
+    echo "\nLogin URL: " . config('app.url') . "/login\n";
+
+    exit(0);
+} catch (\Throwable $e) {
+    if ($db->isTransactionActive()) {
+        $db->rollBack();
+    }
+
+    echo "[ERROR] Failed to create account: " . $e->getMessage() . "\n";
+    echo "[DEBUG] " . $e->getFile() . ':' . $e->getLine() . "\n";
+
+    exit(1);
+}

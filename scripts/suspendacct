@@ -1,0 +1,85 @@
+#!/usr/bin/env php
+<?php
+
+/**
+ * Suspend Account Script
+ *
+ * Suspends a cPanel-style account
+ * Usage: suspendacct username [reason]
+ */
+
+require_once __DIR__ . '/../vendor/autoload.php';
+
+use VirPanel\Core\Application;
+
+if ($argc < 2 || ($argv[1] ?? '') === '--help') {
+    echo <<<HELP
+Suspend Account Script
+
+Usage: suspendacct <username> [reason]
+
+Arguments:
+  username               Account username to suspend (required)
+  reason                 Suspension reason (optional)
+
+Examples:
+  suspendacct john
+  suspendacct jane "Terms of service violation"
+  suspendacct testuser "Non-payment"
+
+HELP;
+    exit(($argv[1] ?? '') === '--help' ? 0 : 1);
+}
+
+$username = $argv[1];
+$reason = $argv[2] ?? 'Administrative action';
+
+// Initialize application
+$app = Application::getInstance(__DIR__ . '/..');
+$db = $app->getContainer()->get('database');
+$prefix = config('database.prefix', 'vp_');
+
+try {
+    // Find account
+    $account = $db->fetchAssociative(
+        "SELECT * FROM {$prefix}accounts WHERE username = ?",
+        [$username]
+    );
+
+    if (!$account) {
+        echo "[ERROR] Account '{$username}' not found.\n";
+        exit(1);
+    }
+
+    if ($account['status'] === 'suspended') {
+        echo "[WARNING] Account '{$username}' is already suspended.\n";
+        echo "Suspended at: {$account['suspended_at']}\n";
+        echo "Reason: {$account['suspension_reason']}\n";
+        exit(0);
+    }
+
+    echo "[INFO] Suspending account '{$username}'...\n";
+
+    // Update account status
+    $db->update($prefix . 'accounts', [
+        'status' => 'suspended',
+        'suspension_reason' => $reason,
+        'suspended_at' => date('Y-m-d H:i:s'),
+        'updated_at' => date('Y-m-d H:i:s'),
+    ], ['id' => $account['id']]);
+
+    echo "[SUCCESS] Account '{$username}' has been suspended.\n";
+    echo "Reason: {$reason}\n";
+
+    // TODO: Additional suspension actions:
+    // - Block web access (modify web server config)
+    // - Disable email access
+    // - Disable FTP access
+    // - Disable cron jobs
+
+    exit(0);
+} catch (\Throwable $e) {
+    echo "[ERROR] Failed to suspend account: " . $e->getMessage() . "\n";
+    echo "[DEBUG] " . $e->getFile() . ':' . $e->getLine() . "\n";
+    exit(1);
+}

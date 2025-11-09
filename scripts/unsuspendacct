@@ -1,0 +1,81 @@
+#!/usr/bin/env php
+<?php
+
+/**
+ * Unsuspend Account Script
+ *
+ * Unsuspends a cPanel-style account
+ * Usage: unsuspendacct username
+ */
+
+require_once __DIR__ . '/../vendor/autoload.php';
+
+use VirPanel\Core\Application;
+
+if ($argc < 2 || ($argv[1] ?? '') === '--help') {
+    echo <<<HELP
+Unsuspend Account Script
+
+Usage: unsuspendacct <username>
+
+Arguments:
+  username               Account username to unsuspend (required)
+
+Examples:
+  unsuspendacct john
+  unsuspendacct jane
+
+HELP;
+    exit(($argv[1] ?? '') === '--help' ? 0 : 1);
+}
+
+$username = $argv[1];
+
+// Initialize application
+$app = Application::getInstance(__DIR__ . '/..');
+$db = $app->getContainer()->get('database');
+$prefix = config('database.prefix', 'vp_');
+
+try {
+    // Find account
+    $account = $db->fetchAssociative(
+        "SELECT * FROM {$prefix}accounts WHERE username = ?",
+        [$username]
+    );
+
+    if (!$account) {
+        echo "[ERROR] Account '{$username}' not found.\n";
+        exit(1);
+    }
+
+    if ($account['status'] !== 'suspended') {
+        echo "[WARNING] Account '{$username}' is not suspended (status: {$account['status']}).\n";
+        exit(0);
+    }
+
+    echo "[INFO] Unsuspending account '{$username}'...\n";
+    echo "Previously suspended at: {$account['suspended_at']}\n";
+    echo "Suspension reason: {$account['suspension_reason']}\n\n";
+
+    // Update account status
+    $db->update($prefix . 'accounts', [
+        'status' => 'active',
+        'suspension_reason' => null,
+        'suspended_at' => null,
+        'updated_at' => date('Y-m-d H:i:s'),
+    ], ['id' => $account['id']]);
+
+    echo "[SUCCESS] Account '{$username}' has been unsuspended and is now active.\n";
+
+    // TODO: Additional unsuspension actions:
+    // - Restore web access (modify web server config)
+    // - Enable email access
+    // - Enable FTP access
+    // - Enable cron jobs
+
+    exit(0);
+} catch (\Throwable $e) {
+    echo "[ERROR] Failed to unsuspend account: " . $e->getMessage() . "\n";
+    echo "[DEBUG] " . $e->getFile() . ':' . $e->getLine() . "\n";
+    exit(1);
+}

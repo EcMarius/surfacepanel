@@ -1,0 +1,177 @@
+#!/usr/bin/env php
+<?php
+
+/**
+ * Check License Script
+ *
+ * Verifies the VirPanel license
+ * Usage: checklicense [--verbose]
+ */
+
+require_once __DIR__ . '/../vendor/autoload.php';
+
+use VirPanel\Core\Application;
+
+$options = getopt('v', ['verbose', 'help']);
+
+if (isset($options['help'])) {
+    echo <<<HELP
+Check License Script
+
+Usage: checklicense [OPTIONS]
+
+Options:
+  -v, --verbose          Show detailed information
+  --help                 Show this help message
+
+HELP;
+    exit(0);
+}
+
+$verbose = isset($options['v']) || isset($options['verbose']);
+
+// Initialize application
+$app = Application::getInstance(__DIR__ . '/..');
+$db = $app->getContainer()->get('database');
+$prefix = config('database.prefix', 'vp_');
+
+try {
+    echo "VirPanel License Checker\n";
+    echo str_repeat('=', 50) . "\n\n";
+
+    // Get license from database
+    $license = $db->fetchAssociative(
+        "SELECT * FROM {$prefix}licenses ORDER BY id DESC LIMIT 1"
+    );
+
+    if (!$license) {
+        echo "[ERROR] No license found in database.\n";
+        echo "[INFO] Please install a valid license or contact support.\n";
+        exit(1);
+    }
+
+    echo "License Information:\n";
+    echo "  License Key:  " . maskLicenseKey($license['license_key']) . "\n";
+    echo "  Type:         " . ucfirst($license['type']) . "\n";
+    echo "  Status:       " . ucfirst($license['status']) . "\n";
+    echo "  Server IP:    {$license['server_ip']}\n";
+    echo "  Hostname:     {$license['server_hostname']}\n";
+    echo "  Max Accounts: " . ($license['max_accounts'] == 0 ? 'Unlimited' : $license['max_accounts']) . "\n";
+    echo "  Issued:       {$license['issued_at']}\n";
+
+    if ($license['expires_at']) {
+        echo "  Expires:      {$license['expires_at']}\n";
+
+        $expiresTimestamp = strtotime($license['expires_at']);
+        $now = time();
+
+        if ($expiresTimestamp < $now) {
+            echo "\n[ERROR] License has EXPIRED!\n";
+            exit(1);
+        } else {
+            $daysLeft = floor(($expiresTimestamp - $now) / 86400);
+
+            if ($daysLeft < 30) {
+                echo "\n[WARNING] License expires in {$daysLeft} days!\n";
+            }
+        }
+    } else {
+        echo "  Expires:      Never (Lifetime)\n";
+    }
+
+    // Check account count
+    $accountCount = $db->fetchOne("SELECT COUNT(*) FROM {$prefix}accounts WHERE status = 'active'");
+
+    echo "\n  Accounts:     {$accountCount}";
+
+    if ($license['max_accounts'] > 0) {
+        echo " / {$license['max_accounts']}";
+
+        if ($accountCount >= $license['max_accounts']) {
+            echo " [LIMIT REACHED]";
+        }
+    }
+
+    echo "\n";
+
+    // Check status
+    echo "\n";
+
+    if ($license['status'] !== 'active') {
+        echo "[ERROR] License status is not active: {$license['status']}\n";
+        exit(1);
+    }
+
+    // Verify with license server (if enabled)
+    if (config('license.verify_remote', true)) {
+        echo "\n[INFO] Verifying with license server...\n";
+
+        $licenseServerUrl = config('license.server_url', 'https://license.virpanel.com/api/v1');
+
+        try {
+            $response = file_get_contents($licenseServerUrl . '/verify', false, stream_context_create([
+                'http' => [
+                    'method' => 'POST',
+                    'header' => 'Content-Type: application/json',
+                    'content' => json_encode([
+                        'license_key' => $license['license_key'],
+                        'server_ip' => $license['server_ip'],
+                        'hostname' => $license['server_hostname'],
+                    ]),
+                    'timeout' => 10,
+                ],
+            ]));
+
+            $result = json_decode($response, true);
+
+            if ($result && $result['valid']) {
+                echo "[SUCCESS] License verified with server\n";
+
+                // Update last verified timestamp
+                $db->update($prefix . 'licenses', [
+                    'last_verified_at' => date('Y-m-d H:i:s'),
+                ], ['id' => $license['id']]);
+            } else {
+                echo "[WARNING] License server returned invalid status\n";
+
+                if ($verbose && isset($result['message'])) {
+                    echo "[INFO] Message: {$result['message']}\n";
+                }
+            }
+        } catch (\Throwable $e) {
+            echo "[WARNING] Could not connect to license server: " . $e->getMessage() . "\n";
+        }
+    }
+
+    if ($verbose) {
+        echo "\nLast verified: " . ($license['last_verified_at'] ?? 'Never') . "\n";
+
+        if (!empty($license['features'])) {
+            echo "\nEnabled features:\n";
+            $features = json_decode($license['features'], true);
+
+            foreach ($features as $feature => $enabled) {
+                if ($enabled) {
+                    echo "  - {$feature}\n";
+                }
+            }
+        }
+    }
+
+    echo "\n[SUCCESS] License is valid and active\n";
+
+    exit(0);
+} catch (\Throwable $e) {
+    echo "[ERROR] Failed to check license: " . $e->getMessage() . "\n";
+    echo "[DEBUG] " . $e->getFile() . ':' . $e->getLine() . "\n";
+    exit(1);
+}
+
+function maskLicenseKey($key)
+{
+    if (strlen($key) <= 8) {
+        return $key;
+    }
+
+    return substr($key, 0, 4) . str_repeat('*', strlen($key) - 8) . substr($key, -4);
+}

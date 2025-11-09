@@ -1,0 +1,166 @@
+#!/usr/bin/env php
+<?php
+
+/**
+ * List Accounts Script
+ *
+ * Lists all cPanel-style accounts
+ * Usage: listaccts [options]
+ */
+
+require_once __DIR__ . '/../vendor/autoload.php';
+
+use VirPanel\Core\Application;
+
+$options = getopt('', ['status:', 'reseller:', 'package:', 'format:', 'help']);
+
+if (isset($options['help'])) {
+    echo <<<HELP
+List Accounts Script
+
+Usage: listaccts [OPTIONS]
+
+Options:
+  --status=STATUS        Filter by status (active, suspended, terminated)
+  --reseller=RESELLER    Filter by reseller username
+  --package=PACKAGE      Filter by package name
+  --format=FORMAT        Output format (table, csv, json) [default: table]
+  --help                 Show this help message
+
+Examples:
+  listaccts
+  listaccts --status=active
+  listaccts --reseller=john --format=csv
+  listaccts --package=professional --format=json
+
+HELP;
+    exit(0);
+}
+
+// Initialize application
+$app = Application::getInstance(__DIR__ . '/..');
+$db = $app->getContainer()->get('database');
+$prefix = config('database.prefix', 'vp_');
+
+try {
+    $queryBuilder = $db->createQueryBuilder()
+        ->select(
+            'a.username',
+            'a.domain',
+            'a.email',
+            'a.status',
+            'a.disk_used',
+            'a.disk_quota',
+            'p.name as package',
+            'u.username as reseller',
+            'a.created_at'
+        )
+        ->from($prefix . 'accounts', 'a')
+        ->leftJoin('a', $prefix . 'packages', 'p', 'a.package_id = p.id')
+        ->leftJoin('a', $prefix . 'users', 'u', 'a.reseller_id = u.id')
+        ->orderBy('a.created_at', 'DESC');
+
+    // Apply filters
+    if (!empty($options['status'])) {
+        $queryBuilder->andWhere('a.status = :status')
+            ->setParameter('status', $options['status']);
+    }
+
+    if (!empty($options['reseller'])) {
+        $queryBuilder->andWhere('u.username = :reseller')
+            ->setParameter('reseller', $options['reseller']);
+    }
+
+    if (!empty($options['package'])) {
+        $queryBuilder->andWhere('p.name = :package')
+            ->setParameter('package', $options['package']);
+    }
+
+    $accounts = $queryBuilder->executeQuery()->fetchAllAssociative();
+
+    if (empty($accounts)) {
+        echo "No accounts found.\n";
+        exit(0);
+    }
+
+    $format = $options['format'] ?? 'table';
+
+    switch ($format) {
+        case 'json':
+            echo json_encode($accounts, JSON_PRETTY_PRINT) . "\n";
+            break;
+
+        case 'csv':
+            // Output CSV header
+            $headers = array_keys($accounts[0]);
+            echo implode(',', $headers) . "\n";
+
+            // Output data
+            foreach ($accounts as $account) {
+                echo implode(',', $account) . "\n";
+            }
+            break;
+
+        case 'table':
+        default:
+            // Calculate column widths
+            $widths = [
+                'username' => 15,
+                'domain' => 30,
+                'status' => 12,
+                'disk' => 15,
+                'package' => 15,
+            ];
+
+            // Header
+            echo str_repeat('=', 110) . "\n";
+            echo sprintf(
+                "%-{$widths['username']}s %-{$widths['domain']}s %-{$widths['status']}s %-{$widths['disk']}s %-{$widths['package']}s %s\n",
+                'USERNAME',
+                'DOMAIN',
+                'STATUS',
+                'DISK USAGE',
+                'PACKAGE',
+                'CREATED'
+            );
+            echo str_repeat('=', 110) . "\n";
+
+            // Rows
+            foreach ($accounts as $account) {
+                $diskUsage = formatBytes($account['disk_used'] * 1024 * 1024);
+                $diskQuota = $account['disk_quota'] == 0 ? 'Unlimited' : formatBytes($account['disk_quota'] * 1024 * 1024);
+                $disk = "{$diskUsage} / {$diskQuota}";
+
+                echo sprintf(
+                    "%-{$widths['username']}s %-{$widths['domain']}s %-{$widths['status']}s %-{$widths['disk']}s %-{$widths['package']}s %s\n",
+                    $account['username'],
+                    substr($account['domain'], 0, $widths['domain']),
+                    $account['status'],
+                    $disk,
+                    $account['package'] ?? 'N/A',
+                    substr($account['created_at'], 0, 10)
+                );
+            }
+
+            echo str_repeat('=', 110) . "\n";
+            echo "Total accounts: " . count($accounts) . "\n";
+            break;
+    }
+
+    exit(0);
+} catch (\Throwable $e) {
+    echo "[ERROR] Failed to list accounts: " . $e->getMessage() . "\n";
+    echo "[DEBUG] " . $e->getFile() . ':' . $e->getLine() . "\n";
+    exit(1);
+}
+
+function formatBytes($bytes, $precision = 2)
+{
+    $units = ['B', 'KB', 'MB', 'GB', 'TB'];
+
+    for ($i = 0; $bytes > 1024 && $i < count($units) - 1; $i++) {
+        $bytes /= 1024;
+    }
+
+    return round($bytes, $precision) . ' ' . $units[$i];
+}
