@@ -54,6 +54,7 @@
             "VirPanel\\Core\\": "src/core/",
             "VirPanel\\Api\\": "src/api/",
             "VirPanel\\Modules\\": "src/modules/",
+            "VirPanel\\Models\\": "src/models/",
             "VirPanel\\Services\\": "src/services/",
             "VirPanel\\Database\\": "src/database/",
             "VirPanel\\Utils\\": "src/utils/"
