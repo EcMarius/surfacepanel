@@ -1,0 +1,90 @@
+<?php
+
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin;
+use App\Http\Controllers\Auth\AdminLoginController;
+
+/*
+|--------------------------------------------------------------------------
+| WHM Admin Routes (Port 15443)
+|--------------------------------------------------------------------------
+|
+| These routes are for the WHM admin panel accessible on port 15443
+| Requires 'admin' guard authentication
+|
+*/
+
+// Admin Authentication Routes
+Route::prefix('admin')->group(function () {
+    Route::middleware('guest:admin')->group(function () {
+        Route::get('/login', [AdminLoginController::class, 'showLoginForm'])->name('admin.login');
+        Route::post('/login', [AdminLoginController::class, 'login']);
+    });
+
+    Route::post('/logout', [AdminLoginController::class, 'logout'])->name('admin.logout');
+});
+
+// Protected Admin Routes
+Route::prefix('admin')->middleware(['panel.detector', 'auth.admin'])->group(function () {
+
+    // Dashboard
+    Route::get('/dashboard', [Admin\DashboardController::class, 'index'])->name('admin.dashboard');
+
+    // Account Management
+    Route::resource('accounts', Admin\AccountController::class);
+    Route::post('accounts/{id}/suspend', [Admin\AccountController::class, 'suspend'])->name('admin.accounts.suspend');
+    Route::post('accounts/{id}/unsuspend', [Admin\AccountController::class, 'unsuspend'])->name('admin.accounts.unsuspend');
+    Route::post('accounts/{id}/terminate', [Admin\AccountController::class, 'terminate'])->name('admin.accounts.terminate');
+
+    // Package Management
+    Route::resource('packages', Admin\PackageController::class);
+
+    // Reseller Management
+    Route::resource('resellers', Admin\ResellerController::class);
+    Route::post('resellers/{id}/suspend', [Admin\ResellerController::class, 'suspend'])->name('admin.resellers.suspend');
+    Route::post('resellers/{id}/unsuspend', [Admin\ResellerController::class, 'unsuspend'])->name('admin.resellers.unsuspend');
+
+    // IP Address Management
+    Route::resource('ip-addresses', Admin\IPAddressController::class);
+    Route::post('ip-addresses/{id}/set-default', [Admin\IPAddressController::class, 'setDefault'])->name('admin.ip-addresses.set-default');
+    Route::post('ip-addresses/assign', [Admin\IPAddressController::class, 'assignToAccount'])->name('admin.ip-addresses.assign');
+
+    // DNS Management
+    Route::get('dns', [Admin\DNSController::class, 'index'])->name('admin.dns.index');
+    Route::resource('dns-zones', Admin\DNSZoneController::class);
+
+    // SSL Certificate Management
+    Route::get('ssl', [Admin\SSLController::class, 'index'])->name('admin.ssl.index');
+    Route::post('ssl/letsencrypt/auto', [Admin\SSLController::class, 'autoInstallLetsEncrypt'])->name('admin.ssl.letsencrypt.auto');
+
+    // Server Configuration
+    Route::get('server/settings', [Admin\ServerController::class, 'settings'])->name('admin.server.settings');
+    Route::post('server/settings', [Admin\ServerController::class, 'updateSettings']);
+    Route::get('server/services', [Admin\ServerController::class, 'services'])->name('admin.server.services');
+    Route::post('server/services/{service}/restart', [Admin\ServerController::class, 'restartService'])->name('admin.server.services.restart');
+
+    // Backup Management
+    Route::get('backups', [Admin\BackupController::class, 'index'])->name('admin.backups.index');
+    Route::post('backups/create', [Admin\BackupController::class, 'create'])->name('admin.backups.create');
+
+    // Module Management
+    Route::resource('modules', Admin\ModuleController::class);
+    Route::post('modules/{name}/enable', [Admin\ModuleController::class, 'enable'])->name('admin.modules.enable');
+    Route::post('modules/{name}/disable', [Admin\ModuleController::class, 'disable'])->name('admin.modules.disable');
+
+    // Template Management
+    Route::resource('templates', Admin\TemplateController::class);
+    Route::post('templates/{name}/activate', [Admin\TemplateController::class, 'activate'])->name('admin.templates.activate');
+
+    // API Token Management
+    Route::resource('api-tokens', Admin\ApiTokenController::class);
+
+    // Audit Logs
+    Route::get('audit-logs', [Admin\AuditLogController::class, 'index'])->name('admin.audit-logs.index');
+
+    // System Statistics
+    Route::get('statistics', [Admin\StatisticsController::class, 'index'])->name('admin.statistics.index');
+});
+
+// Redirect /admin to dashboard
+Route::get('/admin', fn() => redirect()->route('admin.dashboard'))->middleware(['panel.detector', 'auth.admin']);
