@@ -115,6 +115,13 @@ Route::middleware(['panel.detector', 'auth.user'])->group(function () {
     Route::get('/settings', [User\SettingsController::class, 'index'])->name('user.settings.index');
     Route::put('/settings/password', [User\SettingsController::class, 'updatePassword'])->name('user.settings.password');
     Route::put('/settings/email', [User\SettingsController::class, 'updateEmail'])->name('user.settings.email');
+
+    // MultiPHP Manager (Per-domain PHP version selection)
+    Route::get('/multiphp', [User\MultiPHPController::class, 'index'])->name('user.multiphp.index');
+    Route::post('/multiphp/set-version', [User\MultiPHPController::class, 'setVersion'])->name('user.multiphp.set-version');
+    Route::get('/multiphp/ini-editor/{domain}', [User\MultiPHPController::class, 'showIniEditor'])->name('user.multiphp.ini-editor');
+    Route::post('/multiphp/ini-directive', [User\MultiPHPController::class, 'updateIniDirective'])->name('user.multiphp.ini-directive');
+    Route::delete('/multiphp/ini-directive', [User\MultiPHPController::class, 'deleteIniDirective'])->name('user.multiphp.ini-directive.delete');
 });
 
 // Redirect root to dashboard

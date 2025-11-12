@@ -317,6 +317,51 @@ return new class extends Migration
 
             $table->index('token');
         });
+
+        // PHP Versions (System-wide available PHP versions)
+        Schema::create('vp_php_versions', function (Blueprint $table) {
+            $table->id();
+            $table->string('version')->unique(); // e.g., '8.2', '8.1', '7.4'
+            $table->string('binary_path'); // e.g., '/usr/bin/php8.2'
+            $table->string('fpm_pool_dir'); // e.g., '/etc/php/8.2/fpm/pool.d'
+            $table->string('php_ini_path'); // e.g., '/etc/php/8.2/fpm/php.ini'
+            $table->boolean('is_default')->default(false);
+            $table->boolean('is_active')->default(true);
+            $table->json('extensions')->nullable(); // Available extensions
+            $table->timestamps();
+
+            $table->index('version');
+            $table->index('is_default');
+        });
+
+        // Domain PHP Settings (Per-domain PHP configuration)
+        Schema::create('vp_domain_php_settings', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('account_id')->constrained('vp_accounts')->onDelete('cascade');
+            $table->string('domain'); // Can be main, addon, or subdomain
+            $table->foreignId('php_version_id')->constrained('vp_php_versions');
+            $table->string('fpm_pool_name')->nullable(); // Generated pool name
+            $table->integer('fpm_max_children')->default(5);
+            $table->integer('fpm_start_servers')->default(2);
+            $table->integer('fpm_min_spare_servers')->default(1);
+            $table->integer('fpm_max_spare_servers')->default(3);
+            $table->timestamps();
+
+            $table->unique(['account_id', 'domain']);
+            $table->index('domain');
+        });
+
+        // PHP.ini Overrides (Per-domain PHP.ini customization)
+        Schema::create('vp_php_ini_overrides', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('domain_php_setting_id')->constrained('vp_domain_php_settings')->onDelete('cascade');
+            $table->string('directive'); // e.g., 'memory_limit', 'upload_max_filesize'
+            $table->string('value'); // e.g., '256M', '128M'
+            $table->timestamps();
+
+            $table->unique(['domain_php_setting_id', 'directive']);
+            $table->index('directive');
+        });
     }
 
     /**
@@ -324,6 +369,9 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::dropIfExists('vp_php_ini_overrides');
+        Schema::dropIfExists('vp_domain_php_settings');
+        Schema::dropIfExists('vp_php_versions');
         Schema::dropIfExists('vp_api_tokens');
         Schema::dropIfExists('vp_audit_logs');
         Schema::dropIfExists('vp_resellers');

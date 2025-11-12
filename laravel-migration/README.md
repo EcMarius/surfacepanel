@@ -26,11 +26,13 @@ These ports are specifically chosen to avoid conflicts with ALL common software.
 - ✅ API token management
 - ✅ Audit logging
 - ✅ System-wide backups
+- ✅ **MultiPHP Manager** - System-wide PHP version management
 
 ### User Panel (Port 15444)
 - ✅ User dashboard with resource usage
 - ✅ Domain management (addon, subdomain, parked)
 - ✅ Email management (accounts, forwarders, autoresponders)
+- ✅ **Email Deliverability (DKIM/SPF/DMARC)** - Gmail/Yahoo 2024 compliance
 - ✅ Database management (MySQL + phpMyAdmin)
 - ✅ File manager with upload/download
 - ✅ FTP account management
@@ -40,6 +42,7 @@ These ports are specifically chosen to avoid conflicts with ALL common software.
 - ✅ Backup & restore
 - ✅ Website statistics (AWStats alternative)
 - ✅ Application installer (WordPress, Node.js, etc.)
+- ✅ **MultiPHP Manager** - Per-domain PHP version selection & PHP.ini editor
 
 ## 🔐 Dual Authentication System
 

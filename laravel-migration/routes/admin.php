@@ -84,6 +84,16 @@ Route::prefix('admin')->middleware(['panel.detector', 'auth.admin'])->group(func
 
     // System Statistics
     Route::get('statistics', [Admin\StatisticsController::class, 'index'])->name('admin.statistics.index');
+
+    // MultiPHP Manager (System-wide PHP version management)
+    Route::get('multiphp', [Admin\MultiPHPController::class, 'index'])->name('admin.multiphp.index');
+    Route::post('multiphp/detect', [Admin\MultiPHPController::class, 'detectVersions'])->name('admin.multiphp.detect');
+    Route::post('multiphp', [Admin\MultiPHPController::class, 'store'])->name('admin.multiphp.store');
+    Route::get('multiphp/{id}', [Admin\MultiPHPController::class, 'show'])->name('admin.multiphp.show');
+    Route::post('multiphp/{id}/set-default', [Admin\MultiPHPController::class, 'setDefault'])->name('admin.multiphp.set-default');
+    Route::post('multiphp/{id}/toggle-active', [Admin\MultiPHPController::class, 'toggleActive'])->name('admin.multiphp.toggle-active');
+    Route::post('multiphp/{id}/refresh-extensions', [Admin\MultiPHPController::class, 'refreshExtensions'])->name('admin.multiphp.refresh-extensions');
+    Route::delete('multiphp/{id}', [Admin\MultiPHPController::class, 'destroy'])->name('admin.multiphp.destroy');
 });
 
 // Redirect /admin to dashboard
