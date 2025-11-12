@@ -362,6 +362,115 @@ return new class extends Migration
             $table->unique(['domain_php_setting_id', 'directive']);
             $table->index('directive');
         });
+
+        // WAF/ModSecurity Configuration
+        Schema::create('vp_waf_config', function (Blueprint $table) {
+            $table->id();
+            $table->boolean('is_enabled')->default(true);
+            $table->enum('mode', ['off', 'detection', 'blocking'])->default('blocking');
+            $table->boolean('use_owasp_crs')->default(true); // OWASP Core Rule Set
+            $table->integer('paranoia_level')->default(1); // 1-4
+            $table->json('disabled_rules')->nullable(); // Array of rule IDs to disable
+            $table->json('custom_rules')->nullable(); // Custom ModSecurity rules
+            $table->timestamps();
+        });
+
+        // WAF Rules (Custom and managed rules)
+        Schema::create('vp_waf_rules', function (Blueprint $table) {
+            $table->id();
+            $table->string('rule_id')->unique(); // e.g., 'custom-001', 'owasp-crs-942100'
+            $table->string('name');
+            $table->text('description')->nullable();
+            $table->enum('type', ['custom', 'owasp_crs', 'managed'])->default('custom');
+            $table->text('rule_content'); // ModSecurity rule syntax
+            $table->integer('severity')->default(3); // 1=critical, 5=info
+            $table->boolean('is_active')->default(true);
+            $table->integer('false_positive_count')->default(0);
+            $table->timestamps();
+
+            $table->index('rule_id');
+            $table->index('type');
+            $table->index('is_active');
+        });
+
+        // WAF Logs (Attack logs and blocked requests)
+        Schema::create('vp_waf_logs', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('account_id')->nullable()->constrained('vp_accounts')->onDelete('set null');
+            $table->string('domain')->nullable();
+            $table->string('client_ip');
+            $table->string('request_method', 10); // GET, POST, etc.
+            $table->string('request_uri', 500);
+            $table->text('user_agent')->nullable();
+            $table->string('attack_type'); // SQL injection, XSS, etc.
+            $table->string('rule_id'); // Which rule triggered
+            $table->integer('severity'); // 1-5
+            $table->enum('action', ['blocked', 'logged', 'challenged'])->default('blocked');
+            $table->text('request_headers')->nullable();
+            $table->text('request_body')->nullable();
+            $table->text('matched_data')->nullable(); // What triggered the rule
+            $table->string('country_code', 2)->nullable();
+            $table->timestamps();
+
+            $table->index('account_id');
+            $table->index('domain');
+            $table->index('client_ip');
+            $table->index('attack_type');
+            $table->index('created_at');
+        });
+
+        // WAF Whitelist (Trusted IPs and patterns)
+        Schema::create('vp_waf_whitelist', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('account_id')->nullable()->constrained('vp_accounts')->onDelete('cascade');
+            $table->enum('type', ['ip', 'ip_range', 'user_agent', 'uri_pattern'])->default('ip');
+            $table->string('value'); // IP address, CIDR, pattern, etc.
+            $table->string('description')->nullable();
+            $table->boolean('is_global')->default(false); // Global whitelist (admin only)
+            $table->timestamp('expires_at')->nullable();
+            $table->timestamps();
+
+            $table->index('type');
+            $table->index('is_global');
+            $table->index('expires_at');
+        });
+
+        // WAF Blacklist (Blocked IPs and patterns)
+        Schema::create('vp_waf_blacklist', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('account_id')->nullable()->constrained('vp_accounts')->onDelete('cascade');
+            $table->enum('type', ['ip', 'ip_range', 'user_agent', 'uri_pattern'])->default('ip');
+            $table->string('value');
+            $table->string('reason')->nullable();
+            $table->boolean('is_global')->default(false); // Global blacklist (admin only)
+            $table->timestamp('expires_at')->nullable();
+            $table->integer('hit_count')->default(0); // Number of times blocked
+            $table->timestamps();
+
+            $table->index('type');
+            $table->index('is_global');
+            $table->index('expires_at');
+        });
+
+        // WAF Statistics (Aggregated statistics)
+        Schema::create('vp_waf_statistics', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('account_id')->nullable()->constrained('vp_accounts')->onDelete('cascade');
+            $table->date('date');
+            $table->integer('total_requests')->default(0);
+            $table->integer('blocked_requests')->default(0);
+            $table->integer('sql_injection_attempts')->default(0);
+            $table->integer('xss_attempts')->default(0);
+            $table->integer('lfi_attempts')->default(0); // Local File Inclusion
+            $table->integer('rfi_attempts')->default(0); // Remote File Inclusion
+            $table->integer('rce_attempts')->default(0); // Remote Code Execution
+            $table->json('top_attack_ips')->nullable(); // Top 10 attacking IPs
+            $table->json('top_attacked_urls')->nullable(); // Top 10 targeted URLs
+            $table->timestamps();
+
+            $table->unique(['account_id', 'date']);
+            $table->index('date');
+        });
     }
 
     /**
@@ -369,6 +478,12 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::dropIfExists('vp_waf_statistics');
+        Schema::dropIfExists('vp_waf_blacklist');
+        Schema::dropIfExists('vp_waf_whitelist');
+        Schema::dropIfExists('vp_waf_logs');
+        Schema::dropIfExists('vp_waf_rules');
+        Schema::dropIfExists('vp_waf_config');
         Schema::dropIfExists('vp_php_ini_overrides');
         Schema::dropIfExists('vp_domain_php_settings');
         Schema::dropIfExists('vp_php_versions');

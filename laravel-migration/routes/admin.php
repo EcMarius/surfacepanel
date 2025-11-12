@@ -94,6 +94,18 @@ Route::prefix('admin')->middleware(['panel.detector', 'auth.admin'])->group(func
     Route::post('multiphp/{id}/toggle-active', [Admin\MultiPHPController::class, 'toggleActive'])->name('admin.multiphp.toggle-active');
     Route::post('multiphp/{id}/refresh-extensions', [Admin\MultiPHPController::class, 'refreshExtensions'])->name('admin.multiphp.refresh-extensions');
     Route::delete('multiphp/{id}', [Admin\MultiPHPController::class, 'destroy'])->name('admin.multiphp.destroy');
+
+    // Web Application Firewall (ModSecurity/WAF)
+    Route::get('waf', [Admin\WAFController::class, 'index'])->name('admin.waf.index');
+    Route::post('waf/config', [Admin\WAFController::class, 'updateConfig'])->name('admin.waf.config');
+    Route::get('waf/logs', [Admin\WAFController::class, 'logs'])->name('admin.waf.logs');
+    Route::get('waf/statistics', [Admin\WAFController::class, 'statistics'])->name('admin.waf.statistics');
+    Route::get('waf/whitelist', [Admin\WAFController::class, 'whitelist'])->name('admin.waf.whitelist');
+    Route::post('waf/whitelist', [Admin\WAFController::class, 'addWhitelist'])->name('admin.waf.whitelist.add');
+    Route::delete('waf/whitelist/{id}', [Admin\WAFController::class, 'removeWhitelist'])->name('admin.waf.whitelist.remove');
+    Route::get('waf/blacklist', [Admin\WAFController::class, 'blacklist'])->name('admin.waf.blacklist');
+    Route::post('waf/blacklist', [Admin\WAFController::class, 'addBlacklist'])->name('admin.waf.blacklist.add');
+    Route::delete('waf/blacklist/{id}', [Admin\WAFController::class, 'removeBlacklist'])->name('admin.waf.blacklist.remove');
 });
 
 // Redirect /admin to dashboard

@@ -122,6 +122,14 @@ Route::middleware(['panel.detector', 'auth.user'])->group(function () {
     Route::get('/multiphp/ini-editor/{domain}', [User\MultiPHPController::class, 'showIniEditor'])->name('user.multiphp.ini-editor');
     Route::post('/multiphp/ini-directive', [User\MultiPHPController::class, 'updateIniDirective'])->name('user.multiphp.ini-directive');
     Route::delete('/multiphp/ini-directive', [User\MultiPHPController::class, 'deleteIniDirective'])->name('user.multiphp.ini-directive.delete');
+
+    // Web Application Firewall (View logs and manage whitelist)
+    Route::get('/waf', [User\WAFController::class, 'index'])->name('user.waf.index');
+    Route::get('/waf/logs', [User\WAFController::class, 'logs'])->name('user.waf.logs');
+    Route::get('/waf/logs/{id}', [User\WAFController::class, 'logDetails'])->name('user.waf.log-details');
+    Route::get('/waf/whitelist', [User\WAFController::class, 'whitelist'])->name('user.waf.whitelist');
+    Route::post('/waf/whitelist', [User\WAFController::class, 'addWhitelist'])->name('user.waf.whitelist.add');
+    Route::delete('/waf/whitelist/{id}', [User\WAFController::class, 'removeWhitelist'])->name('user.waf.whitelist.remove');
 });
 
 // Redirect root to dashboard

@@ -27,6 +27,7 @@ These ports are specifically chosen to avoid conflicts with ALL common software.
 - ✅ Audit logging
 - ✅ System-wide backups
 - ✅ **MultiPHP Manager** - System-wide PHP version management
+- ✅ **ModSecurity/WAF** - Web Application Firewall with OWASP Core Rule Set
 
 ### User Panel (Port 15444)
 - ✅ User dashboard with resource usage
@@ -43,6 +44,7 @@ These ports are specifically chosen to avoid conflicts with ALL common software.
 - ✅ Website statistics (AWStats alternative)
 - ✅ Application installer (WordPress, Node.js, etc.)
 - ✅ **MultiPHP Manager** - Per-domain PHP version selection & PHP.ini editor
+- ✅ **WAF Security Logs** - View attack logs and manage IP whitelist
 
 ## 🔐 Dual Authentication System
 
