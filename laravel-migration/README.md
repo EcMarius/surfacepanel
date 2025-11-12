@@ -28,6 +28,7 @@ These ports are specifically chosen to avoid conflicts with ALL common software.
 - ✅ System-wide backups
 - ✅ **MultiPHP Manager** - System-wide PHP version management
 - ✅ **ModSecurity/WAF** - Web Application Firewall with OWASP Core Rule Set
+- ✅ **CSF/Firewall** - ConfigServer Security & Firewall with LFD auto-ban
 
 ### User Panel (Port 15444)
 - ✅ User dashboard with resource usage

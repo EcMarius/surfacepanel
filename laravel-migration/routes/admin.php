@@ -106,6 +106,16 @@ Route::prefix('admin')->middleware(['panel.detector', 'auth.admin'])->group(func
     Route::get('waf/blacklist', [Admin\WAFController::class, 'blacklist'])->name('admin.waf.blacklist');
     Route::post('waf/blacklist', [Admin\WAFController::class, 'addBlacklist'])->name('admin.waf.blacklist.add');
     Route::delete('waf/blacklist/{id}', [Admin\WAFController::class, 'removeBlacklist'])->name('admin.waf.blacklist.remove');
+
+    // CSF/Firewall (ConfigServer Security & Firewall)
+    Route::get('firewall', [Admin\FirewallController::class, 'index'])->name('admin.firewall.index');
+    Route::post('firewall/config', [Admin\FirewallController::class, 'updateConfig'])->name('admin.firewall.config');
+    Route::post('firewall/block-ip', [Admin\FirewallController::class, 'blockIP'])->name('admin.firewall.block-ip');
+    Route::post('firewall/unblock-ip', [Admin\FirewallController::class, 'unblockIP'])->name('admin.firewall.unblock-ip');
+    Route::get('firewall/blocked-ips', [Admin\FirewallController::class, 'blockedIPs'])->name('admin.firewall.blocked-ips');
+    Route::get('firewall/login-failures', [Admin\FirewallController::class, 'loginFailures'])->name('admin.firewall.login-failures');
+    Route::post('firewall/cleanup', [Admin\FirewallController::class, 'cleanup'])->name('admin.firewall.cleanup');
+    Route::get('firewall/statistics', [Admin\FirewallController::class, 'statistics'])->name('admin.firewall.statistics');
 });
 
 // Redirect /admin to dashboard

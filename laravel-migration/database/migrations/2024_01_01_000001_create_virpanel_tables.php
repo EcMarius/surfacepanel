@@ -471,6 +471,135 @@ return new class extends Migration
             $table->unique(['account_id', 'date']);
             $table->index('date');
         });
+
+        // Firewall Configuration (CSF-like functionality)
+        Schema::create('vp_firewall_config', function (Blueprint $table) {
+            $table->id();
+            $table->boolean('is_enabled')->default(true);
+            $table->enum('default_policy', ['accept', 'drop', 'reject'])->default('drop');
+            $table->boolean('block_ping')->default(false);
+            $table->boolean('syn_flood_protection')->default(true);
+            $table->integer('connection_limit')->default(100); // Connections per IP
+            $table->integer('port_scan_threshold')->default(10);
+            $table->integer('login_failure_threshold')->default(5);
+            $table->integer('login_failure_ban_time')->default(3600); // seconds
+            $table->json('allowed_countries')->nullable(); // Country codes
+            $table->json('blocked_countries')->nullable();
+            $table->timestamps();
+        });
+
+        // Firewall Rules (iptables rules)
+        Schema::create('vp_firewall_rules', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->enum('chain', ['input', 'output', 'forward'])->default('input');
+            $table->enum('protocol', ['tcp', 'udp', 'icmp', 'all'])->default('tcp');
+            $table->string('source_ip')->nullable(); // Can be IP or CIDR
+            $table->string('destination_ip')->nullable();
+            $table->integer('source_port')->nullable();
+            $table->integer('destination_port')->nullable();
+            $table->enum('action', ['accept', 'drop', 'reject'])->default('accept');
+            $table->integer('priority')->default(100); // Lower = higher priority
+            $table->boolean('is_active')->default(true);
+            $table->text('description')->nullable();
+            $table->timestamps();
+
+            $table->index('chain');
+            $table->index('is_active');
+            $table->index('priority');
+        });
+
+        // Open Ports (Managed ports)
+        Schema::create('vp_firewall_ports', function (Blueprint $table) {
+            $table->id();
+            $table->integer('port');
+            $table->enum('protocol', ['tcp', 'udp', 'both'])->default('tcp');
+            $table->string('service_name')->nullable(); // e.g., SSH, HTTP, MySQL
+            $table->enum('direction', ['inbound', 'outbound', 'both'])->default('inbound');
+            $table->boolean('is_open')->default(true);
+            $table->text('description')->nullable();
+            $table->timestamps();
+
+            $table->unique(['port', 'protocol']);
+            $table->index('is_open');
+        });
+
+        // IP Allow List (Firewall level - different from WAF)
+        Schema::create('vp_firewall_allow', function (Blueprint $table) {
+            $table->id();
+            $table->string('ip_address'); // Can be single IP or CIDR
+            $table->text('comment')->nullable();
+            $table->boolean('is_permanent')->default(true);
+            $table->timestamp('expires_at')->nullable();
+            $table->timestamps();
+
+            $table->index('ip_address');
+            $table->index('expires_at');
+        });
+
+        // IP Deny List (Firewall level)
+        Schema::create('vp_firewall_deny', function (Blueprint $table) {
+            $table->id();
+            $table->string('ip_address');
+            $table->string('reason')->nullable();
+            $table->enum('source', ['manual', 'lfd', 'port_scan', 'brute_force'])->default('manual');
+            $table->boolean('is_permanent')->default(false);
+            $table->timestamp('expires_at')->nullable();
+            $table->integer('violations')->default(1);
+            $table->timestamps();
+
+            $table->index('ip_address');
+            $table->index('source');
+            $table->index('expires_at');
+        });
+
+        // Login Failure Daemon logs (LFD - auto-bans brute force)
+        Schema::create('vp_firewall_login_failures', function (Blueprint $table) {
+            $table->id();
+            $table->string('ip_address');
+            $table->string('service'); // ssh, ftp, webmail, admin, user
+            $table->string('username')->nullable();
+            $table->integer('failure_count')->default(1);
+            $table->timestamp('first_attempt_at');
+            $table->timestamp('last_attempt_at');
+            $table->boolean('is_banned')->default(false);
+            $table->timestamp('banned_until')->nullable();
+            $table->timestamps();
+
+            $table->index('ip_address');
+            $table->index('service');
+            $table->index('is_banned');
+        });
+
+        // Connection Tracking (Monitor active connections)
+        Schema::create('vp_firewall_connections', function (Blueprint $table) {
+            $table->id();
+            $table->string('ip_address');
+            $table->integer('port');
+            $table->enum('protocol', ['tcp', 'udp'])->default('tcp');
+            $table->integer('connection_count')->default(0);
+            $table->timestamp('last_seen_at');
+            $table->boolean('is_blocked')->default(false);
+            $table->timestamps();
+
+            $table->index('ip_address');
+            $table->index('last_seen_at');
+        });
+
+        // Port Scan Detection
+        Schema::create('vp_firewall_port_scans', function (Blueprint $table) {
+            $table->id();
+            $table->string('ip_address');
+            $table->json('scanned_ports'); // Array of ports that were scanned
+            $table->integer('scan_count')->default(1);
+            $table->timestamp('first_detected_at');
+            $table->timestamp('last_detected_at');
+            $table->boolean('is_blocked')->default(false);
+            $table->timestamps();
+
+            $table->index('ip_address');
+            $table->index('is_blocked');
+        });
     }
 
     /**
@@ -478,6 +607,14 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::dropIfExists('vp_firewall_port_scans');
+        Schema::dropIfExists('vp_firewall_connections');
+        Schema::dropIfExists('vp_firewall_login_failures');
+        Schema::dropIfExists('vp_firewall_deny');
+        Schema::dropIfExists('vp_firewall_allow');
+        Schema::dropIfExists('vp_firewall_ports');
+        Schema::dropIfExists('vp_firewall_rules');
+        Schema::dropIfExists('vp_firewall_config');
         Schema::dropIfExists('vp_waf_statistics');
         Schema::dropIfExists('vp_waf_blacklist');
         Schema::dropIfExists('vp_waf_whitelist');
