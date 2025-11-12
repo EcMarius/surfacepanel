@@ -47,6 +47,13 @@ Route::middleware(['panel.detector', 'auth.user'])->group(function () {
     Route::post('/email/autoresponders', [User\EmailController::class, 'storeAutoresponder'])->name('user.email.autoresponder.store');
     Route::delete('/email/autoresponders/{id}', [User\EmailController::class, 'destroyAutoresponder'])->name('user.email.autoresponder.destroy');
 
+    // Email Deliverability (DKIM/SPF/DMARC) - CRITICAL for Gmail/Yahoo 2024
+    Route::get('/email-deliverability', [User\EmailDeliverabilityController::class, 'index'])->name('user.email-deliverability.index');
+    Route::post('/email-deliverability/dkim/install', [User\EmailDeliverabilityController::class, 'installDKIM'])->name('user.email-deliverability.dkim.install');
+    Route::post('/email-deliverability/spf/install', [User\EmailDeliverabilityController::class, 'installSPF'])->name('user.email-deliverability.spf.install');
+    Route::post('/email-deliverability/dmarc/install', [User\EmailDeliverabilityController::class, 'installDMARC'])->name('user.email-deliverability.dmarc.install');
+    Route::get('/email-deliverability/{domain}/status', [User\EmailDeliverabilityController::class, 'checkStatus'])->name('user.email-deliverability.status');
+
     // Database Management
     Route::get('/databases', [User\DatabaseController::class, 'index'])->name('user.databases.index');
     Route::post('/databases', [User\DatabaseController::class, 'storeDatabase'])->name('user.databases.store');
