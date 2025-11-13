@@ -38,6 +38,7 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'two_factor_secret',
     ];
 
     /**
@@ -48,6 +49,8 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+        'two_factor_enabled' => 'boolean',
+        'two_factor_confirmed_at' => 'datetime',
     ];
 
     /**
@@ -112,5 +115,98 @@ class User extends Authenticatable
     public function auditLogs()
     {
         return $this->hasMany(AuditLog::class);
+    }
+
+    /**
+     * Get the two-factor authentication settings
+     */
+    public function twoFactorAuth()
+    {
+        return $this->hasOne(TwoFactorAuth::class);
+    }
+
+    /**
+     * Get the backup codes
+     */
+    public function backupCodes()
+    {
+        return $this->hasMany(BackupCode::class);
+    }
+
+    /**
+     * Get the two-factor recovery requests
+     */
+    public function twoFactorRecoveries()
+    {
+        return $this->hasMany(TwoFactorRecovery::class);
+    }
+
+    /**
+     * Check if user has 2FA enabled
+     */
+    public function hasTwoFactorEnabled(): bool
+    {
+        return $this->two_factor_enabled && !empty($this->two_factor_secret);
+    }
+
+    /**
+     * Get decrypted 2FA secret
+     */
+    public function getTwoFactorSecret(): ?string
+    {
+        if (empty($this->two_factor_secret)) {
+            return null;
+        }
+
+        try {
+            return decrypt($this->two_factor_secret);
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Set encrypted 2FA secret
+     */
+    public function setTwoFactorSecret(string $secret): void
+    {
+        $this->two_factor_secret = encrypt($secret);
+    }
+
+    /**
+     * Enable two-factor authentication
+     */
+    public function enableTwoFactor(): void
+    {
+        $this->two_factor_enabled = true;
+        $this->two_factor_confirmed_at = now();
+        $this->save();
+    }
+
+    /**
+     * Disable two-factor authentication
+     */
+    public function disableTwoFactor(): void
+    {
+        $this->two_factor_enabled = false;
+        $this->two_factor_secret = null;
+        $this->two_factor_confirmed_at = null;
+        $this->save();
+
+        // Delete all backup codes
+        $this->backupCodes()->delete();
+
+        // Delete 2FA settings
+        $this->twoFactorAuth()->delete();
+    }
+
+    /**
+     * Get remaining backup codes count
+     */
+    public function remainingBackupCodes(): int
+    {
+        return $this->backupCodes()
+            ->where('is_used', false)
+            ->count();
     }
 }

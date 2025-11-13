@@ -117,6 +117,41 @@ Route::prefix('admin')->middleware(['panel.detector', 'auth.admin'])->group(func
     Route::post('firewall/cleanup', [Admin\FirewallController::class, 'cleanup'])->name('admin.firewall.cleanup');
     Route::get('firewall/statistics', [Admin\FirewallController::class, 'statistics'])->name('admin.firewall.statistics');
 
+    // OVH Cloud Provider Integration
+    Route::get('ovh', [Admin\OVHController::class, 'index'])->name('admin.ovh.index');
+    Route::get('ovh/config', [Admin\OVHController::class, 'showConfig'])->name('admin.ovh.config');
+    Route::post('ovh/config', [Admin\OVHController::class, 'updateConfig'])->name('admin.ovh.update-config');
+    Route::post('ovh/request-consumer-key', [Admin\OVHController::class, 'requestConsumerKey'])->name('admin.ovh.request-consumer-key');
+    Route::post('ovh/test-connection', [Admin\OVHController::class, 'testConnection'])->name('admin.ovh.test-connection');
+    Route::post('ovh/toggle-active', [Admin\OVHController::class, 'toggleActive'])->name('admin.ovh.toggle-active');
+    Route::get('ovh/servers', [Admin\OVHController::class, 'servers'])->name('admin.ovh.servers');
+    Route::post('ovh/sync-servers', [Admin\OVHController::class, 'syncServers'])->name('admin.ovh.sync-servers');
+    Route::get('ovh/provision', [Admin\OVHController::class, 'showProvision'])->name('admin.ovh.provision');
+    Route::post('ovh/provision-server', [Admin\OVHController::class, 'provisionServer'])->name('admin.ovh.provision-server');
+    Route::get('ovh/servers/{id}/details', [Admin\OVHController::class, 'getServerDetails'])->name('admin.ovh.server-details');
+    Route::post('ovh/servers/{id}/reboot', [Admin\OVHController::class, 'rebootServer'])->name('admin.ovh.server-reboot');
+    Route::post('ovh/servers/{id}/reinstall', [Admin\OVHController::class, 'reinstallServer'])->name('admin.ovh.server-reinstall');
+    Route::get('ovh/failover-ips', [Admin\OVHController::class, 'failoverIps'])->name('admin.ovh.failover-ips');
+    Route::post('ovh/route-failover-ip', [Admin\OVHController::class, 'routeFailoverIp'])->name('admin.ovh.route-failover-ip');
+    Route::post('ovh/update-reverse-dns', [Admin\OVHController::class, 'updateReverseDns'])->name('admin.ovh.update-reverse-dns');
+    Route::get('ovh/billing', [Admin\OVHController::class, 'billing'])->name('admin.ovh.billing');
+    Route::post('ovh/sync-billing', [Admin\OVHController::class, 'syncBilling'])->name('admin.ovh.sync-billing');
+    Route::get('ovh/cloud-instances', [Admin\OVHController::class, 'cloudInstances'])->name('admin.ovh.cloud-instances');
+    Route::post('ovh/cloud-instances', [Admin\OVHController::class, 'createCloudInstance'])->name('admin.ovh.create-cloud-instance');
+    Route::post('ovh/cloud-instances/{id}/control', [Admin\OVHController::class, 'controlCloudInstance'])->name('admin.ovh.control-cloud-instance');
+    Route::get('ovh/servers/{id}/network-stats', [Admin\OVHController::class, 'networkStats'])->name('admin.ovh.network-stats');
+
+    // SpamAssassin (Email spam filtering)
+    Route::get('spamassassin', [Admin\SpamAssassinController::class, 'index'])->name('admin.spamassassin.index');
+    Route::get('spamassassin/settings', [Admin\SpamAssassinController::class, 'settings'])->name('admin.spamassassin.settings');
+    Route::post('spamassassin/settings', [Admin\SpamAssassinController::class, 'updateSettings'])->name('admin.spamassassin.settings.update');
+    Route::post('spamassassin/enable-account', [Admin\SpamAssassinController::class, 'enableAccount'])->name('admin.spamassassin.enable-account');
+    Route::post('spamassassin/disable-account', [Admin\SpamAssassinController::class, 'disableAccount'])->name('admin.spamassassin.disable-account');
+    Route::get('spamassassin/logs', [Admin\SpamAssassinController::class, 'logs'])->name('admin.spamassassin.logs');
+    Route::get('spamassassin/statistics', [Admin\SpamAssassinController::class, 'statistics'])->name('admin.spamassassin.statistics');
+    Route::post('spamassassin/rebuild-bayes', [Admin\SpamAssassinController::class, 'rebuildBayes'])->name('admin.spamassassin.rebuild-bayes');
+    Route::post('spamassassin/update-rules', [Admin\SpamAssassinController::class, 'updateRules'])->name('admin.spamassassin.update-rules');
+
     // Webmail Management (Roundcube)
     Route::get('webmail', [Admin\WebmailController::class, 'index'])->name('admin.webmail.index');
     Route::get('webmail/install', [Admin\WebmailController::class, 'showInstallation'])->name('admin.webmail.install');
@@ -126,6 +161,17 @@ Route::prefix('admin')->middleware(['panel.detector', 'auth.admin'])->group(func
     Route::post('webmail/uninstall', [Admin\WebmailController::class, 'uninstall'])->name('admin.webmail.uninstall');
     Route::get('webmail/sessions', [Admin\WebmailController::class, 'sessions'])->name('admin.webmail.sessions');
     Route::get('webmail/statistics', [Admin\WebmailController::class, 'statistics'])->name('admin.webmail.statistics');
+
+    // Two-Factor Authentication Management
+    Route::get('two-factor', [Admin\TwoFactorController::class, 'index'])->name('admin.two-factor.index');
+    Route::get('two-factor/users', [Admin\TwoFactorController::class, 'users'])->name('admin.two-factor.users');
+    Route::post('two-factor/enforce-policy', [Admin\TwoFactorController::class, 'enforcePolicy'])->name('admin.two-factor.enforce-policy');
+    Route::get('two-factor/recovery-requests', [Admin\TwoFactorController::class, 'recoveryRequests'])->name('admin.two-factor.recovery-requests');
+    Route::post('two-factor/recovery-requests/{id}/approve', [Admin\TwoFactorController::class, 'approveRecovery'])->name('admin.two-factor.recovery.approve');
+    Route::post('two-factor/recovery-requests/{id}/deny', [Admin\TwoFactorController::class, 'denyRecovery'])->name('admin.two-factor.recovery.deny');
+    Route::delete('two-factor/users/{userId}/force-disable', [Admin\TwoFactorController::class, 'forceDisable'])->name('admin.two-factor.force-disable');
+    Route::get('two-factor/users/{userId}/details', [Admin\TwoFactorController::class, 'showUser'])->name('admin.two-factor.user-details');
+    Route::get('two-factor/statistics', [Admin\TwoFactorController::class, 'statistics'])->name('admin.two-factor.statistics');
 });
 
 // Redirect /admin to dashboard

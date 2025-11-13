@@ -22,8 +22,15 @@ Route::middleware('guest:user')->group(function () {
 
 Route::post('/logout', [UserLoginController::class, 'logout'])->name('user.logout');
 
-// Protected User Routes
+// Two-Factor Authentication Routes (accessible after basic auth)
 Route::middleware(['panel.detector', 'auth.user'])->group(function () {
+    Route::get('/two-factor/challenge', [User\TwoFactorController::class, 'challenge'])->name('two-factor.challenge');
+    Route::post('/two-factor/verify', [User\TwoFactorController::class, 'verify'])->name('two-factor.verify');
+    Route::post('/two-factor/recovery-request', [User\TwoFactorController::class, 'requestRecovery'])->name('two-factor.recovery-request');
+});
+
+// Protected User Routes (with 2FA check)
+Route::middleware(['panel.detector', 'auth.user', 'two.factor'])->group(function () {
 
     // Dashboard
     Route::get('/dashboard', [User\DashboardController::class, 'index'])->name('user.dashboard');
@@ -53,6 +60,23 @@ Route::middleware(['panel.detector', 'auth.user'])->group(function () {
     Route::post('/email-deliverability/spf/install', [User\EmailDeliverabilityController::class, 'installSPF'])->name('user.email-deliverability.spf.install');
     Route::post('/email-deliverability/dmarc/install', [User\EmailDeliverabilityController::class, 'installDMARC'])->name('user.email-deliverability.dmarc.install');
     Route::get('/email-deliverability/{domain}/status', [User\EmailDeliverabilityController::class, 'checkStatus'])->name('user.email-deliverability.status');
+
+    // Email Filters (Sieve)
+    Route::get('/email-filters', [User\EmailFilterController::class, 'index'])->name('user.email-filters.index');
+    Route::get('/email-filters/create', [User\EmailFilterController::class, 'create'])->name('user.email-filters.create');
+    Route::post('/email-filters', [User\EmailFilterController::class, 'store'])->name('user.email-filters.store');
+    Route::get('/email-filters/{id}/edit', [User\EmailFilterController::class, 'edit'])->name('user.email-filters.edit');
+    Route::put('/email-filters/{id}', [User\EmailFilterController::class, 'update'])->name('user.email-filters.update');
+    Route::delete('/email-filters/{id}', [User\EmailFilterController::class, 'destroy'])->name('user.email-filters.destroy');
+    Route::post('/email-filters/{id}/toggle', [User\EmailFilterController::class, 'toggle'])->name('user.email-filters.toggle');
+    Route::get('/email-filters/{id}/duplicate', [User\EmailFilterController::class, 'duplicate'])->name('user.email-filters.duplicate');
+    Route::post('/email-filters/reorder', [User\EmailFilterController::class, 'reorder'])->name('user.email-filters.reorder');
+    Route::post('/email-filters/test', [User\EmailFilterController::class, 'test'])->name('user.email-filters.test');
+    Route::get('/email-filters/export', [User\EmailFilterController::class, 'export'])->name('user.email-filters.export');
+    Route::post('/email-filters/import', [User\EmailFilterController::class, 'import'])->name('user.email-filters.import');
+    Route::get('/email-filters/vacation', [User\EmailFilterController::class, 'vacation'])->name('user.email-filters.vacation');
+    Route::post('/email-filters/vacation/setup', [User\EmailFilterController::class, 'setupVacation'])->name('user.email-filters.vacation.setup');
+    Route::post('/email-filters/vacation/disable', [User\EmailFilterController::class, 'disableVacation'])->name('user.email-filters.vacation.disable');
 
     // Database Management
     Route::get('/databases', [User\DatabaseController::class, 'index'])->name('user.databases.index');
@@ -116,6 +140,14 @@ Route::middleware(['panel.detector', 'auth.user'])->group(function () {
     Route::put('/settings/password', [User\SettingsController::class, 'updatePassword'])->name('user.settings.password');
     Route::put('/settings/email', [User\SettingsController::class, 'updateEmail'])->name('user.settings.email');
 
+    // Two-Factor Authentication Settings
+    Route::get('/settings/two-factor', [User\TwoFactorController::class, 'index'])->name('user.two-factor.index');
+    Route::get('/settings/two-factor/setup', [User\TwoFactorController::class, 'setup'])->name('user.two-factor.setup');
+    Route::post('/settings/two-factor/enable', [User\TwoFactorController::class, 'enable'])->name('user.two-factor.enable');
+    Route::delete('/settings/two-factor/disable', [User\TwoFactorController::class, 'disable'])->name('user.two-factor.disable');
+    Route::get('/settings/two-factor/backup-codes', [User\TwoFactorController::class, 'showBackupCodes'])->name('user.two-factor.backup-codes');
+    Route::post('/settings/two-factor/regenerate-codes', [User\TwoFactorController::class, 'regenerateBackupCodes'])->name('user.two-factor.regenerate-codes');
+
     // MultiPHP Manager (Per-domain PHP version selection)
     Route::get('/multiphp', [User\MultiPHPController::class, 'index'])->name('user.multiphp.index');
     Route::post('/multiphp/set-version', [User\MultiPHPController::class, 'setVersion'])->name('user.multiphp.set-version');
@@ -139,6 +171,16 @@ Route::middleware(['panel.detector', 'auth.user'])->group(function () {
     Route::get('/webmail/accounts', [User\WebmailController::class, 'getEmailAccounts'])->name('user.webmail.accounts');
     Route::post('/webmail/create-default', [User\WebmailController::class, 'createDefaultEmail'])->name('user.webmail.create-default');
     Route::post('/webmail/revoke-sessions', [User\WebmailController::class, 'revokeSessions'])->name('user.webmail.revoke-sessions');
+
+    // SpamAssassin (Email spam filtering)
+    Route::get('/spamassassin', [User\SpamAssassinController::class, 'index'])->name('user.spamassassin.index');
+    Route::post('/spamassassin/config', [User\SpamAssassinController::class, 'updateConfig'])->name('user.spamassassin.config');
+    Route::get('/spamassassin/lists', [User\SpamAssassinController::class, 'lists'])->name('user.spamassassin.lists');
+    Route::post('/spamassassin/lists', [User\SpamAssassinController::class, 'addToList'])->name('user.spamassassin.lists.add');
+    Route::delete('/spamassassin/lists/{id}', [User\SpamAssassinController::class, 'removeFromList'])->name('user.spamassassin.lists.remove');
+    Route::get('/spamassassin/training', [User\SpamAssassinController::class, 'training'])->name('user.spamassassin.training');
+    Route::post('/spamassassin/train', [User\SpamAssassinController::class, 'train'])->name('user.spamassassin.train');
+    Route::get('/spamassassin/logs', [User\SpamAssassinController::class, 'logs'])->name('user.spamassassin.logs');
 });
 
 // Redirect root to dashboard
