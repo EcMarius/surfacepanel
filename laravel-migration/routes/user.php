@@ -125,6 +125,21 @@ Route::middleware(['panel.detector', 'auth.user', 'two.factor'])->group(function
     Route::get('/backups/{id}/download', [User\BackupController::class, 'download'])->name('user.backups.download');
     Route::post('/backups/{id}/restore', [User\BackupController::class, 'restore'])->name('user.backups.restore');
     Route::delete('/backups/{id}', [User\BackupController::class, 'destroy'])->name('user.backups.destroy');
+    Route::get('/backups/{id}/preview', [User\BackupController::class, 'preview'])->name('user.backups.preview');
+    Route::post('/backups/{id}/verify', [User\BackupController::class, 'verify'])->name('user.backups.verify');
+    Route::post('/backups/{id}/restore/process', [User\BackupController::class, 'processRestore'])->name('user.backups.restore.process');
+
+    // Backup Schedules
+    Route::get('/backups/schedules', [User\BackupController::class, 'schedules'])->name('user.backups.schedules');
+    Route::post('/backups/schedules', [User\BackupController::class, 'storeSchedule'])->name('user.backups.schedules.store');
+    Route::put('/backups/schedules/{id}', [User\BackupController::class, 'updateSchedule'])->name('user.backups.schedules.update');
+    Route::delete('/backups/schedules/{id}', [User\BackupController::class, 'deleteSchedule'])->name('user.backups.schedules.delete');
+
+    // Backup Destinations
+    Route::get('/backups/destinations', [User\BackupController::class, 'destinations'])->name('user.backups.destinations');
+    Route::post('/backups/destinations', [User\BackupController::class, 'storeDestination'])->name('user.backups.destinations.store');
+    Route::post('/backups/destinations/{id}/test', [User\BackupController::class, 'testDestination'])->name('user.backups.destinations.test');
+    Route::delete('/backups/destinations/{id}', [User\BackupController::class, 'deleteDestination'])->name('user.backups.destinations.delete');
 
     // Website Statistics
     Route::get('/statistics', [User\StatisticsController::class, 'index'])->name('user.statistics.index');
