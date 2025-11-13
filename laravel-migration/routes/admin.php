@@ -172,6 +172,35 @@ Route::prefix('admin')->middleware(['panel.detector', 'auth.admin'])->group(func
     Route::delete('two-factor/users/{userId}/force-disable', [Admin\TwoFactorController::class, 'forceDisable'])->name('admin.two-factor.force-disable');
     Route::get('two-factor/users/{userId}/details', [Admin\TwoFactorController::class, 'showUser'])->name('admin.two-factor.user-details');
     Route::get('two-factor/statistics', [Admin\TwoFactorController::class, 'statistics'])->name('admin.two-factor.statistics');
+
+    // cPanel/WHM Migration
+    Route::get('migration', [Admin\MigrationController::class, 'index'])->name('admin.migration.index');
+    Route::get('migration/create', [Admin\MigrationController::class, 'create'])->name('admin.migration.create');
+    Route::post('migration', [Admin\MigrationController::class, 'store'])->name('admin.migration.store');
+    Route::get('migration/{id}', [Admin\MigrationController::class, 'show'])->name('admin.migration.show');
+    Route::post('migration/{id}/start', [Admin\MigrationController::class, 'start'])->name('admin.migration.start');
+    Route::get('migration/{id}/progress', [Admin\MigrationController::class, 'progress'])->name('admin.migration.progress');
+    Route::get('migration/{id}/status', [Admin\MigrationController::class, 'status'])->name('admin.migration.status');
+    Route::get('migration/{id}/report', [Admin\MigrationController::class, 'report'])->name('admin.migration.report');
+    Route::post('migration/{id}/rollback', [Admin\MigrationController::class, 'rollback'])->name('admin.migration.rollback');
+    Route::delete('migration/{id}', [Admin\MigrationController::class, 'destroy'])->name('admin.migration.destroy');
+    Route::get('migration/{id}/download-logs', [Admin\MigrationController::class, 'downloadLogs'])->name('admin.migration.download-logs');
+    Route::post('migration/{id}/validate', [Admin\MigrationController::class, 'validate'])->name('admin.migration.validate');
+    Route::get('migration-statistics', [Admin\MigrationController::class, 'statistics'])->name('admin.migration.statistics');
+
+    // GPU Server Management (NVIDIA GPU support)
+    Route::get('gpu', [Admin\GPUController::class, 'index'])->name('admin.gpu.index');
+    Route::post('gpu/detect', [Admin\GPUController::class, 'detectGPUs'])->name('admin.gpu.detect');
+    Route::post('gpu/{id}/refresh', [Admin\GPUController::class, 'refreshStats'])->name('admin.gpu.refresh');
+    Route::get('gpu/allocations', [Admin\GPUController::class, 'allocations'])->name('admin.gpu.allocations');
+    Route::post('gpu/allocate', [Admin\GPUController::class, 'allocateGPU'])->name('admin.gpu.allocate');
+    Route::post('gpu/allocation/{id}/deallocate', [Admin\GPUController::class, 'deallocateGPU'])->name('admin.gpu.deallocate');
+    Route::post('gpu/install-cuda', [Admin\GPUController::class, 'installCUDA'])->name('admin.gpu.install-cuda');
+    Route::post('gpu/install-cudnn', [Admin\GPUController::class, 'installCuDNN'])->name('admin.gpu.install-cudnn');
+    Route::get('gpu/frameworks', [Admin\GPUController::class, 'frameworks'])->name('admin.gpu.frameworks');
+    Route::post('gpu/frameworks', [Admin\GPUController::class, 'addFramework'])->name('admin.gpu.frameworks.add');
+    Route::get('gpu/monitoring', [Admin\GPUController::class, 'monitoring'])->name('admin.gpu.monitoring');
+    Route::get('gpu/monitoring/data', [Admin\GPUController::class, 'getMonitoringData'])->name('admin.gpu.monitoring.data');
 });
 
 // Redirect /admin to dashboard

@@ -181,6 +181,16 @@ Route::middleware(['panel.detector', 'auth.user', 'two.factor'])->group(function
     Route::get('/spamassassin/training', [User\SpamAssassinController::class, 'training'])->name('user.spamassassin.training');
     Route::post('/spamassassin/train', [User\SpamAssassinController::class, 'train'])->name('user.spamassassin.train');
     Route::get('/spamassassin/logs', [User\SpamAssassinController::class, 'logs'])->name('user.spamassassin.logs');
+
+    // OVH Cloud Resources
+    Route::get('/ovh', [User\OVHController::class, 'index'])->name('user.ovh.index');
+    Route::get('/ovh/servers/{id}', [User\OVHController::class, 'serverDetails'])->name('user.ovh.server-details');
+    Route::post('/ovh/servers/{id}/reboot', [User\OVHController::class, 'rebootServer'])->name('user.ovh.server-reboot');
+    Route::get('/ovh/instances/{id}', [User\OVHController::class, 'instanceDetails'])->name('user.ovh.instance-details');
+    Route::post('/ovh/instances/{id}/control', [User\OVHController::class, 'controlInstance'])->name('user.ovh.instance-control');
+    Route::get('/ovh/billing', [User\OVHController::class, 'billing'])->name('user.ovh.billing');
+    Route::get('/ovh/servers/{id}/stats', [User\OVHController::class, 'serverStats'])->name('user.ovh.server-stats');
+    Route::get('/ovh/monitoring', [User\OVHController::class, 'monitoring'])->name('user.ovh.monitoring');
 });
 
 // Redirect root to dashboard
