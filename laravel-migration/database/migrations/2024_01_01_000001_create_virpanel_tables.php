@@ -133,6 +133,86 @@ return new class extends Migration
             $table->timestamps();
         });
 
+        // Email Filters (Sieve)
+        Schema::create('vp_email_filters', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('account_id')->constrained('vp_accounts')->onDelete('cascade');
+            $table->string('email'); // Email address this filter applies to
+            $table->string('name'); // Filter name
+            $table->text('description')->nullable();
+            $table->integer('priority')->default(100); // Lower = higher priority
+            $table->boolean('is_active')->default(true);
+            $table->enum('match_type', ['all', 'any'])->default('all'); // Match all or any conditions
+            $table->boolean('stop_processing')->default(false); // Stop processing further filters
+            $table->timestamps();
+
+            $table->index('email');
+            $table->index('priority');
+            $table->index('is_active');
+        });
+
+        // Email Filter Conditions (IF conditions)
+        Schema::create('vp_email_filter_conditions', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('filter_id')->constrained('vp_email_filters')->onDelete('cascade');
+            $table->enum('field', [
+                'from',
+                'to',
+                'subject',
+                'body',
+                'header',
+                'size',
+                'spam_score',
+                'recipient',
+                'sender'
+            ])->default('from');
+            $table->string('header_name')->nullable(); // For custom header matching
+            $table->enum('operator', [
+                'contains',
+                'not_contains',
+                'equals',
+                'not_equals',
+                'begins_with',
+                'ends_with',
+                'matches_regex',
+                'greater_than',
+                'less_than'
+            ])->default('contains');
+            $table->text('value'); // Value to match against
+            $table->boolean('case_sensitive')->default(false);
+            $table->timestamps();
+
+            $table->index('filter_id');
+        });
+
+        // Email Filter Actions (THEN actions)
+        Schema::create('vp_email_filter_actions', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('filter_id')->constrained('vp_email_filters')->onDelete('cascade');
+            $table->enum('action_type', [
+                'move_to_folder',
+                'forward',
+                'redirect',
+                'delete',
+                'reject',
+                'discard',
+                'mark_as_read',
+                'flag',
+                'pipe_to_program',
+                'vacation',
+                'stop'
+            ])->default('move_to_folder');
+            $table->text('action_value')->nullable(); // Folder name, email address, program path, etc.
+            $table->text('vacation_message')->nullable(); // For vacation auto-responder
+            $table->string('vacation_subject')->nullable();
+            $table->integer('vacation_days')->nullable(); // Days between vacation responses
+            $table->integer('order')->default(1); // Action execution order
+            $table->timestamps();
+
+            $table->index('filter_id');
+            $table->index('order');
+        });
+
         // Databases
         Schema::create('vp_databases', function (Blueprint $table) {
             $table->id();
@@ -600,6 +680,541 @@ return new class extends Migration
             $table->index('ip_address');
             $table->index('is_blocked');
         });
+
+        // Webmail Configuration (Roundcube installation settings)
+        Schema::create('vp_webmail_config', function (Blueprint $table) {
+            $table->id();
+            $table->boolean('is_installed')->default(false);
+            $table->string('version')->nullable(); // Roundcube version
+            $table->string('installation_path')->default('/var/www/roundcube');
+            $table->string('database_name')->default('roundcube');
+            $table->string('database_user')->nullable();
+            $table->string('database_password')->nullable();
+            $table->string('des_key')->nullable(); // Encryption key for Roundcube
+            $table->json('enabled_plugins')->nullable(); // Array of enabled plugins
+            $table->string('default_theme')->default('elastic');
+            $table->string('imap_host')->default('localhost:143');
+            $table->string('smtp_host')->default('localhost:587');
+            $table->boolean('smtp_auth')->default(true);
+            $table->string('product_name')->default('VirPanel Webmail');
+            $table->boolean('force_https')->default(true);
+            $table->integer('session_lifetime')->default(30); // minutes
+            $table->json('settings')->nullable(); // Additional Roundcube settings
+            $table->timestamps();
+        });
+
+        // Webmail SSO Sessions (for auto-login tokens)
+        Schema::create('vp_webmail_sessions', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('user_id')->constrained('vp_users')->onDelete('cascade');
+            $table->foreignId('account_id')->constrained('vp_accounts')->onDelete('cascade');
+            $table->string('email'); // Email account to login as
+            $table->string('token', 64)->unique(); // SSO token
+            $table->string('ip_address');
+            $table->text('user_agent')->nullable();
+            $table->boolean('is_used')->default(false);
+            $table->timestamp('used_at')->nullable();
+            $table->timestamp('expires_at');
+            $table->timestamps();
+
+            $table->index('token');
+            $table->index('email');
+            $table->index('expires_at');
+        });
+
+
+        // OVH Configuration (API credentials)
+        Schema::create('vp_ovh_config', function (Blueprint $table) {
+            $table->id();
+            $table->string('application_key')->nullable();
+            $table->string('application_secret')->nullable();
+            $table->string('consumer_key')->nullable();
+            $table->enum('endpoint', ['ovh-eu', 'ovh-ca', 'ovh-us', 'kimsufi-eu', 'kimsufi-ca', 'soyoustart-eu', 'soyoustart-ca'])->default('ovh-eu');
+            $table->boolean('is_active')->default(false);
+            $table->timestamp('last_sync_at')->nullable();
+            $table->text('webhook_url')->nullable(); // For OVH webhooks
+            $table->timestamps();
+        });
+
+        // OVH Servers (Managed servers)
+        Schema::create('vp_ovh_servers', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('account_id')->nullable()->constrained('vp_accounts')->onDelete('set null');
+            $table->string('service_name')->unique(); // OVH service name (e.g., ns12345.ip-1-2-3.eu)
+            $table->enum('server_type', ['dedicated', 'vps', 'public_cloud', 'private_cloud'])->default('dedicated');
+            $table->string('display_name')->nullable();
+            $table->string('ip_address')->nullable();
+            $table->json('additional_ips')->nullable(); // Array of failover IPs
+            $table->string('datacenter')->nullable(); // e.g., rbx, sbg, gra
+            $table->string('os')->nullable(); // Operating system
+            $table->string('status')->default('active'); // active, suspended, terminated
+            $table->integer('cpu_cores')->nullable();
+            $table->integer('ram_mb')->nullable(); // RAM in MB
+            $table->integer('disk_gb')->nullable(); // Disk in GB
+            $table->integer('bandwidth_mbps')->nullable(); // Bandwidth in Mbps
+            $table->json('vrack_info')->nullable(); // vRack configuration
+            $table->text('notes')->nullable();
+            $table->timestamp('provisioned_at')->nullable();
+            $table->timestamps();
+
+            $table->index('service_name');
+            $table->index('server_type');
+            $table->index('status');
+        });
+
+        // OVH Billing (Cost tracking)
+        Schema::create('vp_ovh_billing', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('server_id')->constrained('vp_ovh_servers')->onDelete('cascade');
+            $table->string('bill_id')->nullable(); // OVH bill ID
+            $table->date('billing_date');
+            $table->decimal('amount', 10, 2)->default(0);
+            $table->string('currency', 3)->default('EUR');
+            $table->enum('billing_type', ['monthly', 'hourly', 'one_time', 'bandwidth_overage'])->default('monthly');
+            $table->text('description')->nullable();
+            $table->enum('status', ['pending', 'paid', 'overdue', 'cancelled'])->default('pending');
+            $table->timestamp('paid_at')->nullable();
+            $table->json('metadata')->nullable(); // Additional billing information
+            $table->timestamps();
+
+            $table->index('server_id');
+            $table->index('billing_date');
+            $table->index('status');
+        });
+
+        // OVH Public Cloud Instances
+        Schema::create('vp_ovh_cloud_instances', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('account_id')->nullable()->constrained('vp_accounts')->onDelete('set null');
+            $table->string('instance_id')->unique(); // OVH instance ID
+            $table->string('project_id'); // OVH project ID
+            $table->string('name');
+            $table->string('flavor_id'); // Instance type (s1-2, b2-7, etc.)
+            $table->string('image_id'); // OS image ID
+            $table->string('region'); // GRA, SBG, BHS, etc.
+            $table->string('ip_address')->nullable();
+            $table->json('ip_addresses')->nullable(); // All IPs (public/private)
+            $table->enum('status', ['active', 'stopped', 'building', 'error', 'deleted'])->default('building');
+            $table->integer('vcpus')->nullable();
+            $table->integer('ram_mb')->nullable();
+            $table->integer('disk_gb')->nullable();
+            $table->boolean('monthly_billing')->default(false);
+            $table->decimal('hourly_rate', 10, 4)->nullable();
+            $table->decimal('monthly_rate', 10, 2)->nullable();
+            $table->timestamps();
+
+            $table->index('instance_id');
+            $table->index('project_id');
+            $table->index('status');
+        });
+
+        // OVH Load Balancers
+        Schema::create('vp_ovh_load_balancers', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('account_id')->nullable()->constrained('vp_accounts')->onDelete('set null');
+            $table->string('service_name')->unique();
+            $table->string('display_name')->nullable();
+            $table->string('ip_address')->nullable();
+            $table->json('backend_servers')->nullable(); // Array of backend server IPs
+            $table->enum('protocol', ['http', 'https', 'tcp', 'udp'])->default('http');
+            $table->integer('port')->default(80);
+            $table->string('algorithm')->default('roundrobin'); // roundrobin, leastconn, source
+            $table->boolean('ssl_enabled')->default(false);
+            $table->text('ssl_certificate')->nullable();
+            $table->enum('status', ['active', 'suspended'])->default('active');
+            $table->timestamps();
+
+            $table->index('service_name');
+            $table->index('status');
+        });
+
+        // OVH Object Storage (Swift)
+        Schema::create('vp_ovh_object_storage', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('account_id')->nullable()->constrained('vp_accounts')->onDelete('set null');
+            $table->string('container_name')->unique();
+            $table->string('project_id');
+            $table->string('region');
+            $table->enum('type', ['public', 'private', 'static'])->default('private');
+            $table->bigInteger('objects_count')->default(0);
+            $table->bigInteger('bytes_used')->default(0); // Storage used in bytes
+            $table->string('cdn_url')->nullable(); // CDN URL if enabled
+            $table->boolean('cdn_enabled')->default(false);
+            $table->timestamps();
+
+            $table->index('container_name');
+            $table->index('project_id');
+        });
+
+        // OVH Network (vRack)
+        Schema::create('vp_ovh_vrack', function (Blueprint $table) {
+            $table->id();
+            $table->string('vrack_id')->unique();
+            $table->string('name')->nullable();
+            $table->text('description')->nullable();
+            $table->json('allowed_services')->nullable(); // Services allowed in vRack
+            $table->json('servers')->nullable(); // Array of server service names
+            $table->enum('status', ['active', 'inactive'])->default('active');
+            $table->timestamps();
+
+            $table->index('vrack_id');
+        });
+
+        // OVH Failover IPs
+        Schema::create('vp_ovh_failover_ips', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('server_id')->nullable()->constrained('vp_ovh_servers')->onDelete('set null');
+            $table->string('ip_address')->unique();
+            $table->string('netmask')->default('255.255.255.255');
+            $table->string('routed_to')->nullable(); // Service name it's routed to
+            $table->string('reverse_dns')->nullable();
+            $table->enum('status', ['active', 'parked'])->default('parked');
+            $table->timestamps();
+
+            $table->index('ip_address');
+            $table->index('routed_to');
+        });
+
+        // cPanel/WHM Migrations (Track migration progress)
+        Schema::create('vp_migrations', function (Blueprint $table) {
+            $table->id();
+            $table->string('backup_filename');
+            $table->string('backup_path');
+            $table->bigInteger('backup_size')->default(0); // bytes
+            $table->enum('source_type', ['cpanel', 'whm', 'plesk', 'directadmin'])->default('cpanel');
+            $table->enum('status', ['pending', 'uploading', 'parsing', 'processing', 'completed', 'failed', 'rolled_back'])->default('pending');
+            $table->integer('progress_percentage')->default(0);
+            $table->string('current_step')->nullable(); // What's currently being migrated
+            $table->json('migration_summary')->nullable(); // Summary of what will be migrated
+            $table->json('migration_results')->nullable(); // Results after migration
+            $table->json('validation_errors')->nullable(); // Any validation errors found
+            $table->text('error_message')->nullable();
+            $table->timestamp('started_at')->nullable();
+            $table->timestamp('completed_at')->nullable();
+            $table->foreignId('created_by')->nullable()->constrained('vp_users')->onDelete('set null');
+            $table->timestamps();
+
+            $table->index('status');
+            $table->index('created_at');
+        });
+
+        // Migration detailed logs
+        Schema::create('vp_migration_logs', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('migration_id')->constrained('vp_migrations')->onDelete('cascade');
+            $table->enum('level', ['info', 'warning', 'error', 'success'])->default('info');
+            $table->enum('category', ['account', 'domain', 'email', 'database', 'dns', 'ssl', 'cron', 'ftp', 'file'])->nullable();
+            $table->string('item_name')->nullable(); // Name of the item being migrated (email address, domain, etc.)
+            $table->text('message');
+            $table->json('details')->nullable(); // Additional details as JSON
+            $table->timestamps();
+
+            $table->index('migration_id');
+            $table->index('level');
+            $table->index('category');
+        });
+
+        // SpamAssassin Configuration (Per-account settings)
+        Schema::create('vp_spamassassin_config', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('account_id')->constrained('vp_accounts')->onDelete('cascade');
+            $table->boolean('is_enabled')->default(true);
+            $table->decimal('spam_threshold', 4, 2)->default(5.0); // Spam score threshold (0-10)
+            $table->enum('spam_action', ['delete', 'quarantine', 'tag'])->default('tag');
+            $table->string('spam_folder')->default('Spam'); // For quarantine action
+            $table->boolean('auto_learn')->default(true); // Bayesian auto-learning
+            $table->boolean('use_bayes')->default(true); // Use Bayesian filtering
+            $table->boolean('use_dcc')->default(false); // Distributed Checksum Clearinghouse
+            $table->boolean('use_pyzor')->default(false); // Pyzor spam filtering
+            $table->boolean('use_razor')->default(false); // Razor spam filtering
+            $table->boolean('rewrite_header')->default(true); // Add [SPAM] to subject
+            $table->string('spam_subject_tag')->default('[SPAM]');
+            $table->integer('emails_processed')->default(0);
+            $table->integer('spam_detected')->default(0);
+            $table->integer('ham_detected')->default(0);
+            $table->timestamps();
+
+            $table->unique('account_id');
+            $table->index('is_enabled');
+        });
+
+        // Spam Scores (Track individual email spam scores)
+        Schema::create('vp_spam_scores', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('account_id')->constrained('vp_accounts')->onDelete('cascade');
+            $table->string('email_from')->nullable();
+            $table->string('email_to');
+            $table->string('subject')->nullable();
+            $table->decimal('spam_score', 5, 2); // Actual spam score
+            $table->decimal('required_score', 4, 2); // Threshold at time of check
+            $table->boolean('is_spam')->default(false);
+            $table->enum('action_taken', ['delivered', 'deleted', 'quarantined', 'tagged'])->default('delivered');
+            $table->text('tests_hit')->nullable(); // Which SpamAssassin tests were triggered
+            $table->string('message_id')->nullable();
+            $table->timestamps();
+
+            $table->index('account_id');
+            $table->index('email_to');
+            $table->index('is_spam');
+            $table->index('created_at');
+        });
+
+        // Spam Training (Bayesian learning - ham/spam samples)
+        Schema::create('vp_spam_training', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('account_id')->constrained('vp_accounts')->onDelete('cascade');
+            $table->string('email_account'); // Which email account trained this
+            $table->enum('type', ['spam', 'ham']); // Spam or Ham (legitimate email)
+            $table->string('message_id')->nullable();
+            $table->string('subject')->nullable();
+            $table->string('from_address')->nullable();
+            $table->text('headers')->nullable(); // Store key headers for training
+            $table->boolean('is_trained')->default(false); // Has been fed to sa-learn
+            $table->timestamp('trained_at')->nullable();
+            $table->timestamps();
+
+            $table->index('account_id');
+            $table->index('email_account');
+            $table->index('type');
+            $table->index('is_trained');
+        });
+
+        // SpamAssassin Whitelist/Blacklist
+        Schema::create('vp_spamassassin_lists', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('account_id')->constrained('vp_accounts')->onDelete('cascade');
+            $table->enum('list_type', ['whitelist', 'blacklist'])->default('whitelist');
+            $table->enum('entry_type', ['email', 'domain', 'ip'])->default('email');
+            $table->string('value'); // Email address, domain, or IP
+            $table->string('description')->nullable();
+            $table->integer('hit_count')->default(0); // Number of times matched
+            $table->timestamps();
+
+            $table->index(['account_id', 'list_type']);
+            $table->index('value');
+        });
+
+        // SpamAssassin Statistics (Daily aggregated statistics)
+        Schema::create('vp_spamassassin_statistics', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('account_id')->constrained('vp_accounts')->onDelete('cascade');
+            $table->date('date');
+            $table->integer('emails_scanned')->default(0);
+            $table->integer('spam_detected')->default(0);
+            $table->integer('ham_detected')->default(0);
+            $table->integer('emails_deleted')->default(0);
+            $table->integer('emails_quarantined')->default(0);
+            $table->integer('emails_tagged')->default(0);
+            $table->decimal('average_spam_score', 5, 2)->default(0);
+            $table->decimal('average_ham_score', 5, 2)->default(0);
+            $table->json('top_spam_senders')->nullable(); // Top 10 spam senders
+            $table->timestamps();
+
+            $table->unique(['account_id', 'date']);
+            $table->index('date');
+        });
+
+        // Hetzner Cloud Configuration
+        Schema::create('vp_hetzner_config', function (Blueprint $table) {
+            $table->id();
+            $table->string('api_token')->nullable(); // Encrypted API token
+            $table->boolean('is_enabled')->default(false);
+            $table->string('default_datacenter')->default('nbg1'); // nbg1, fsn1, hel1, ash
+            $table->string('default_server_type')->default('cx11'); // Server type for auto-provision
+            $table->string('default_image')->default('ubuntu-22.04'); // Default OS image
+            $table->json('ssh_key_ids')->nullable(); // Array of SSH key IDs to add to servers
+            $table->boolean('auto_backups')->default(false);
+            $table->decimal('monthly_budget_alert', 10, 2)->nullable(); // Alert threshold
+            $table->string('notification_email')->nullable();
+            $table->timestamps();
+        });
+
+        // Hetzner Cloud Servers
+        Schema::create('vp_hetzner_servers', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('account_id')->nullable()->constrained('vp_accounts')->onDelete('set null');
+            $table->foreignId('user_id')->nullable()->constrained('vp_users')->onDelete('set null');
+            $table->bigInteger('hetzner_server_id')->unique(); // Hetzner Cloud server ID
+            $table->string('name');
+            $table->enum('server_type', ['cx11', 'cx21', 'cx31', 'cx41', 'cx51', 'cpx11', 'cpx21', 'cpx31', 'cpx41', 'cpx51', 'ccx12', 'ccx22', 'ccx32', 'ccx42', 'ccx52']); // Hetzner server types
+            $table->string('datacenter'); // nbg1-dc3, fsn1-dc14, hel1-dc2, ash-dc1
+            $table->string('location'); // nbg1, fsn1, hel1, ash
+            $table->string('image'); // OS image
+            $table->enum('status', ['initializing', 'starting', 'running', 'stopping', 'stopped', 'migrating', 'rebuilding', 'deleting', 'deleted', 'unknown'])->default('initializing');
+            $table->string('public_ipv4')->nullable();
+            $table->string('public_ipv6')->nullable();
+            $table->json('private_networks')->nullable(); // Array of private network IDs
+            $table->integer('disk_size')->default(0); // GB
+            $table->integer('vcpus')->default(0);
+            $table->integer('memory')->default(0); // MB
+            $table->decimal('hourly_price', 10, 4)->default(0);
+            $table->decimal('monthly_price', 10, 2)->default(0);
+            $table->boolean('backups_enabled')->default(false);
+            $table->json('labels')->nullable(); // Key-value labels
+            $table->text('root_password')->nullable(); // Encrypted
+            $table->timestamp('created_at_hetzner')->nullable(); // When created at Hetzner
+            $table->timestamp('deleted_at')->nullable();
+            $table->timestamps();
+
+            $table->index('hetzner_server_id');
+            $table->index('account_id');
+            $table->index('user_id');
+            $table->index('status');
+            $table->index('location');
+        });
+
+        // Hetzner Cloud Volumes (Block Storage)
+        Schema::create('vp_hetzner_volumes', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('server_id')->nullable()->constrained('vp_hetzner_servers')->onDelete('set null');
+            $table->bigInteger('hetzner_volume_id')->unique();
+            $table->string('name');
+            $table->integer('size')->default(10); // GB
+            $table->string('location'); // nbg1, fsn1, hel1, ash
+            $table->enum('format', ['ext4', 'xfs'])->nullable();
+            $table->string('linux_device')->nullable(); // e.g., /dev/disk/by-id/scsi-0HC_Volume_12345
+            $table->string('mount_point')->nullable(); // e.g., /mnt/volume1
+            $table->enum('status', ['creating', 'available', 'attaching', 'attached', 'detaching', 'deleting', 'deleted'])->default('creating');
+            $table->boolean('auto_mount')->default(false);
+            $table->decimal('monthly_price', 10, 2)->default(0);
+            $table->json('labels')->nullable();
+            $table->timestamp('attached_at')->nullable();
+            $table->timestamp('deleted_at')->nullable();
+            $table->timestamps();
+
+            $table->index('hetzner_volume_id');
+            $table->index('server_id');
+            $table->index('status');
+        });
+
+        // Hetzner Cloud Snapshots
+        Schema::create('vp_hetzner_snapshots', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('server_id')->nullable()->constrained('vp_hetzner_servers')->onDelete('set null');
+            $table->bigInteger('hetzner_snapshot_id')->unique();
+            $table->enum('type', ['server', 'volume'])->default('server'); // snapshot type
+            $table->bigInteger('source_id'); // Server ID or Volume ID
+            $table->string('name');
+            $table->text('description')->nullable();
+            $table->integer('size')->default(0); // GB
+            $table->enum('status', ['creating', 'available', 'deleting', 'deleted'])->default('creating');
+            $table->decimal('monthly_price', 10, 2)->default(0);
+            $table->json('labels')->nullable();
+            $table->timestamp('created_at_hetzner')->nullable();
+            $table->timestamp('deleted_at')->nullable();
+            $table->timestamps();
+
+            $table->index('hetzner_snapshot_id');
+            $table->index('server_id');
+            $table->index('type');
+            $table->index('status');
+        });
+
+        // Hetzner Cloud Billing & Cost Tracking
+        Schema::create('vp_hetzner_billing', function (Blueprint $table) {
+            $table->id();
+            $table->enum('resource_type', ['server', 'volume', 'snapshot', 'floating_ip', 'load_balancer', 'traffic']); // Resource type
+            $table->bigInteger('resource_id')->nullable(); // Server ID, Volume ID, etc.
+            $table->string('resource_name')->nullable();
+            $table->date('billing_date'); // Date of the charge
+            $table->integer('billing_month'); // Month (1-12)
+            $table->integer('billing_year'); // Year
+            $table->decimal('hours_used', 10, 2)->default(0); // Hours in the billing period
+            $table->decimal('hourly_rate', 10, 4)->default(0);
+            $table->decimal('amount', 10, 2)->default(0); // Cost for this entry
+            $table->string('currency', 3)->default('EUR');
+            $table->json('details')->nullable(); // Additional billing details
+            $table->timestamps();
+
+            $table->index('resource_type');
+            $table->index('resource_id');
+            $table->index('billing_date');
+            $table->index(['billing_year', 'billing_month']);
+        });
+
+        // Hetzner Cloud Floating IPs
+        Schema::create('vp_hetzner_floating_ips', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('server_id')->nullable()->constrained('vp_hetzner_servers')->onDelete('set null');
+            $table->bigInteger('hetzner_floating_ip_id')->unique();
+            $table->string('name')->nullable();
+            $table->text('description')->nullable();
+            $table->string('ip_address');
+            $table->enum('type', ['ipv4', 'ipv6'])->default('ipv4');
+            $table->string('location'); // nbg1, fsn1, hel1, ash
+            $table->boolean('is_assigned')->default(false);
+            $table->string('dns_ptr')->nullable(); // Reverse DNS
+            $table->decimal('monthly_price', 10, 2)->default(0);
+            $table->json('labels')->nullable();
+            $table->timestamp('deleted_at')->nullable();
+            $table->timestamps();
+
+            $table->index('hetzner_floating_ip_id');
+            $table->index('server_id');
+            $table->index('ip_address');
+        });
+
+        // Hetzner Cloud Firewalls
+        Schema::create('vp_hetzner_firewalls', function (Blueprint $table) {
+            $table->id();
+            $table->bigInteger('hetzner_firewall_id')->unique();
+            $table->string('name');
+            $table->json('rules')->nullable(); // Firewall rules in JSON
+            $table->json('applied_to')->nullable(); // Array of server IDs
+            $table->json('labels')->nullable();
+            $table->timestamps();
+
+            $table->index('hetzner_firewall_id');
+        });
+
+        // Hetzner Cloud Load Balancers
+        Schema::create('vp_hetzner_load_balancers', function (Blueprint $table) {
+            $table->id();
+            $table->bigInteger('hetzner_lb_id')->unique();
+            $table->string('name');
+            $table->string('load_balancer_type'); // lb11, lb21, lb31
+            $table->string('location');
+            $table->string('public_ipv4')->nullable();
+            $table->string('public_ipv6')->nullable();
+            $table->json('services')->nullable(); // Load balancer services configuration
+            $table->json('targets')->nullable(); // Target servers
+            $table->string('algorithm')->default('round_robin'); // round_robin, least_connections
+            $table->decimal('monthly_price', 10, 2)->default(0);
+            $table->json('labels')->nullable();
+            $table->timestamp('deleted_at')->nullable();
+            $table->timestamps();
+
+            $table->index('hetzner_lb_id');
+        });
+
+        // Hetzner Cloud Private Networks
+        Schema::create('vp_hetzner_networks', function (Blueprint $table) {
+            $table->id();
+            $table->bigInteger('hetzner_network_id')->unique();
+            $table->string('name');
+            $table->string('ip_range'); // e.g., 10.0.0.0/16
+            $table->json('subnets')->nullable(); // Array of subnets
+            $table->json('routes')->nullable(); // Network routes
+            $table->json('labels')->nullable();
+            $table->timestamps();
+
+            $table->index('hetzner_network_id');
+        });
+
+        // Hetzner SSH Keys
+        Schema::create('vp_hetzner_ssh_keys', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('user_id')->nullable()->constrained('vp_users')->onDelete('cascade');
+            $table->bigInteger('hetzner_ssh_key_id')->unique();
+            $table->string('name');
+            $table->text('public_key');
+            $table->string('fingerprint');
+            $table->json('labels')->nullable();
+            $table->timestamps();
+
+            $table->index('hetzner_ssh_key_id');
+            $table->index('user_id');
+        });
     }
 
     /**
@@ -607,6 +1222,33 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::dropIfExists('vp_hetzner_ssh_keys');
+        Schema::dropIfExists('vp_hetzner_networks');
+        Schema::dropIfExists('vp_hetzner_load_balancers');
+        Schema::dropIfExists('vp_hetzner_firewalls');
+        Schema::dropIfExists('vp_hetzner_floating_ips');
+        Schema::dropIfExists('vp_hetzner_billing');
+        Schema::dropIfExists('vp_hetzner_snapshots');
+        Schema::dropIfExists('vp_hetzner_volumes');
+        Schema::dropIfExists('vp_hetzner_servers');
+        Schema::dropIfExists('vp_hetzner_config');
+        Schema::dropIfExists('vp_spamassassin_statistics');
+        Schema::dropIfExists('vp_spamassassin_lists');
+        Schema::dropIfExists('vp_spam_training');
+        Schema::dropIfExists('vp_spam_scores');
+        Schema::dropIfExists('vp_spamassassin_config');
+        Schema::dropIfExists('vp_migration_logs');
+        Schema::dropIfExists('vp_migrations');
+        Schema::dropIfExists('vp_webmail_sessions');
+        Schema::dropIfExists('vp_ovh_failover_ips');
+        Schema::dropIfExists('vp_ovh_vrack');
+        Schema::dropIfExists('vp_ovh_object_storage');
+        Schema::dropIfExists('vp_ovh_load_balancers');
+        Schema::dropIfExists('vp_ovh_cloud_instances');
+        Schema::dropIfExists('vp_ovh_billing');
+        Schema::dropIfExists('vp_ovh_servers');
+        Schema::dropIfExists('vp_ovh_config');
+        Schema::dropIfExists('vp_webmail_config');
         Schema::dropIfExists('vp_firewall_port_scans');
         Schema::dropIfExists('vp_firewall_connections');
         Schema::dropIfExists('vp_firewall_login_failures');
@@ -639,6 +1281,9 @@ return new class extends Migration
         Schema::dropIfExists('vp_database_users');
         Schema::dropIfExists('vp_databases');
         Schema::dropIfExists('vp_email_autoresponders');
+        Schema::dropIfExists('vp_email_filter_actions');
+        Schema::dropIfExists('vp_email_filter_conditions');
+        Schema::dropIfExists('vp_email_filters');
         Schema::dropIfExists('vp_email_forwarders');
         Schema::dropIfExists('vp_email_accounts');
         Schema::dropIfExists('vp_parked_domains');

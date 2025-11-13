@@ -130,6 +130,15 @@ Route::middleware(['panel.detector', 'auth.user'])->group(function () {
     Route::get('/waf/whitelist', [User\WAFController::class, 'whitelist'])->name('user.waf.whitelist');
     Route::post('/waf/whitelist', [User\WAFController::class, 'addWhitelist'])->name('user.waf.whitelist.add');
     Route::delete('/waf/whitelist/{id}', [User\WAFController::class, 'removeWhitelist'])->name('user.waf.whitelist.remove');
+
+    // Webmail Access (Roundcube with SSO)
+    Route::get('/webmail', [User\WebmailController::class, 'index'])->name('user.webmail.index');
+    Route::post('/webmail/login', [User\WebmailController::class, 'login'])->name('user.webmail.login');
+    Route::get('/webmail/quick-login/{email}', [User\WebmailController::class, 'quickLogin'])->name('user.webmail.quick-login');
+    Route::post('/webmail/validate-token', [User\WebmailController::class, 'validateToken'])->name('user.webmail.validate-token');
+    Route::get('/webmail/accounts', [User\WebmailController::class, 'getEmailAccounts'])->name('user.webmail.accounts');
+    Route::post('/webmail/create-default', [User\WebmailController::class, 'createDefaultEmail'])->name('user.webmail.create-default');
+    Route::post('/webmail/revoke-sessions', [User\WebmailController::class, 'revokeSessions'])->name('user.webmail.revoke-sessions');
 });
 
 // Redirect root to dashboard

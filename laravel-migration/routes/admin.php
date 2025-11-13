@@ -116,6 +116,16 @@ Route::prefix('admin')->middleware(['panel.detector', 'auth.admin'])->group(func
     Route::get('firewall/login-failures', [Admin\FirewallController::class, 'loginFailures'])->name('admin.firewall.login-failures');
     Route::post('firewall/cleanup', [Admin\FirewallController::class, 'cleanup'])->name('admin.firewall.cleanup');
     Route::get('firewall/statistics', [Admin\FirewallController::class, 'statistics'])->name('admin.firewall.statistics');
+
+    // Webmail Management (Roundcube)
+    Route::get('webmail', [Admin\WebmailController::class, 'index'])->name('admin.webmail.index');
+    Route::get('webmail/install', [Admin\WebmailController::class, 'showInstallation'])->name('admin.webmail.install');
+    Route::post('webmail/install', [Admin\WebmailController::class, 'install']);
+    Route::post('webmail/config', [Admin\WebmailController::class, 'updateConfig'])->name('admin.webmail.config');
+    Route::post('webmail/plugins', [Admin\WebmailController::class, 'updatePlugins'])->name('admin.webmail.plugins');
+    Route::post('webmail/uninstall', [Admin\WebmailController::class, 'uninstall'])->name('admin.webmail.uninstall');
+    Route::get('webmail/sessions', [Admin\WebmailController::class, 'sessions'])->name('admin.webmail.sessions');
+    Route::get('webmail/statistics', [Admin\WebmailController::class, 'statistics'])->name('admin.webmail.statistics');
 });
 
 // Redirect /admin to dashboard
