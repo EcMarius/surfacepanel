@@ -66,6 +66,29 @@ Route::prefix('admin')->middleware(['panel.detector', 'auth.admin'])->group(func
     // Backup Management
     Route::get('backups', [Admin\BackupController::class, 'index'])->name('admin.backups.index');
     Route::post('backups/create', [Admin\BackupController::class, 'create'])->name('admin.backups.create');
+    Route::delete('backups/{id}', [Admin\BackupController::class, 'delete'])->name('admin.backups.delete');
+    Route::get('backups/{id}/download', [Admin\BackupController::class, 'download'])->name('admin.backups.download');
+    Route::get('backups/statistics', [Admin\BackupController::class, 'statistics'])->name('admin.backups.statistics');
+
+    // Backup Schedules
+    Route::get('backups/schedules', [Admin\BackupController::class, 'schedules'])->name('admin.backups.schedules');
+    Route::post('backups/schedules', [Admin\BackupController::class, 'storeSchedule'])->name('admin.backups.schedules.store');
+    Route::put('backups/schedules/{id}', [Admin\BackupController::class, 'updateSchedule'])->name('admin.backups.schedules.update');
+    Route::delete('backups/schedules/{id}', [Admin\BackupController::class, 'deleteSchedule'])->name('admin.backups.schedules.delete');
+
+    // Backup Destinations
+    Route::get('backups/destinations', [Admin\BackupController::class, 'destinations'])->name('admin.backups.destinations');
+    Route::post('backups/destinations', [Admin\BackupController::class, 'storeDestination'])->name('admin.backups.destinations.store');
+    Route::post('backups/destinations/{id}/test', [Admin\BackupController::class, 'testDestination'])->name('admin.backups.destinations.test');
+    Route::delete('backups/destinations/{id}', [Admin\BackupController::class, 'deleteDestination'])->name('admin.backups.destinations.delete');
+
+    // Backup Rotations
+    Route::get('backups/rotations', [Admin\BackupController::class, 'rotations'])->name('admin.backups.rotations');
+    Route::post('backups/rotations', [Admin\BackupController::class, 'storeRotation'])->name('admin.backups.rotations.store');
+
+    // Backup Encryption
+    Route::get('backups/encryption', [Admin\BackupController::class, 'encryption'])->name('admin.backups.encryption');
+    Route::post('backups/encryption', [Admin\BackupController::class, 'storeEncryption'])->name('admin.backups.encryption.store');
 
     // Module Management
     Route::resource('modules', Admin\ModuleController::class);
@@ -214,6 +237,32 @@ Route::prefix('admin')->middleware(['panel.detector', 'auth.admin'])->group(func
     Route::post('modal/usage/sync', [Admin\ModalController::class, 'syncUsage'])->name('admin.modal.usage.sync');
     Route::get('modal/logs', [Admin\ModalController::class, 'logs'])->name('admin.modal.logs');
     Route::get('modal/statistics', [Admin\ModalController::class, 'statistics'])->name('admin.modal.statistics');
+
+    // Hetzner Cloud Integration (Server provisioning and management)
+    Route::get('hetzner', [Admin\HetznerController::class, 'index'])->name('admin.hetzner.index');
+    Route::get('hetzner/config', [Admin\HetznerController::class, 'config'])->name('admin.hetzner.config');
+    Route::post('hetzner/config', [Admin\HetznerController::class, 'updateConfig'])->name('admin.hetzner.config.update');
+
+    // Server Management
+    Route::get('hetzner/servers', [Admin\HetznerController::class, 'servers'])->name('admin.hetzner.servers');
+    Route::get('hetzner/provision', [Admin\HetznerController::class, 'provisionForm'])->name('admin.hetzner.provision');
+    Route::post('hetzner/servers', [Admin\HetznerController::class, 'provision'])->name('admin.hetzner.servers.provision');
+    Route::delete('hetzner/servers/{id}', [Admin\HetznerController::class, 'deleteServer'])->name('admin.hetzner.servers.delete');
+    Route::post('hetzner/servers/{id}/power-on', [Admin\HetznerController::class, 'powerOnServer'])->name('admin.hetzner.servers.power-on');
+    Route::post('hetzner/servers/{id}/power-off', [Admin\HetznerController::class, 'powerOffServer'])->name('admin.hetzner.servers.power-off');
+    Route::post('hetzner/servers/{id}/reboot', [Admin\HetznerController::class, 'rebootServer'])->name('admin.hetzner.servers.reboot');
+    Route::post('hetzner/servers/sync', [Admin\HetznerController::class, 'syncServers'])->name('admin.hetzner.servers.sync');
+
+    // Volume Management
+    Route::get('hetzner/volumes', [Admin\HetznerController::class, 'volumes'])->name('admin.hetzner.volumes');
+    Route::post('hetzner/volumes', [Admin\HetznerController::class, 'createVolume'])->name('admin.hetzner.volumes.create');
+    Route::post('hetzner/volumes/{id}/attach', [Admin\HetznerController::class, 'attachVolume'])->name('admin.hetzner.volumes.attach');
+    Route::post('hetzner/volumes/{id}/detach', [Admin\HetznerController::class, 'detachVolume'])->name('admin.hetzner.volumes.detach');
+    Route::delete('hetzner/volumes/{id}', [Admin\HetznerController::class, 'deleteVolume'])->name('admin.hetzner.volumes.delete');
+    Route::post('hetzner/volumes/sync', [Admin\HetznerController::class, 'syncVolumes'])->name('admin.hetzner.volumes.sync');
+
+    // Billing
+    Route::get('hetzner/billing', [Admin\HetznerController::class, 'billing'])->name('admin.hetzner.billing');
 });
 
 // Redirect /admin to dashboard

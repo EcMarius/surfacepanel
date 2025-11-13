@@ -205,6 +205,44 @@ Route::middleware(['panel.detector', 'auth.user', 'two.factor'])->group(function
     Route::get('/gpu/container/{id}/stats', [User\GPUController::class, 'getContainerStats'])->name('user.gpu.container.stats');
     Route::post('/gpu/deploy', [User\GPUController::class, 'deployContainer'])->name('user.gpu.deploy');
     Route::get('/gpu/environments', [User\GPUController::class, 'environments'])->name('user.gpu.environments');
+
+    // Modal.com Serverless Platform (User functions management)
+    Route::get('/modal', [User\ModalController::class, 'index'])->name('user.modal.index');
+    Route::get('/modal/functions', [User\ModalController::class, 'functions'])->name('user.modal.functions');
+    Route::get('/modal/functions/create', [User\ModalController::class, 'createFunction'])->name('user.modal.functions.create');
+    Route::post('/modal/functions', [User\ModalController::class, 'storeFunction'])->name('user.modal.functions.store');
+    Route::post('/modal/functions/{id}/deploy', [User\ModalController::class, 'deployFunction'])->name('user.modal.functions.deploy');
+    Route::put('/modal/functions/{id}', [User\ModalController::class, 'updateFunction'])->name('user.modal.functions.update');
+    Route::delete('/modal/functions/{id}', [User\ModalController::class, 'deleteFunction'])->name('user.modal.functions.delete');
+    Route::post('/modal/functions/{id}/invoke', [User\ModalController::class, 'invokeFunction'])->name('user.modal.functions.invoke');
+    Route::post('/modal/functions/{id}/rollback', [User\ModalController::class, 'rollbackVersion'])->name('user.modal.functions.rollback');
+    Route::get('/modal/jobs', [User\ModalController::class, 'jobs'])->name('user.modal.jobs');
+    Route::post('/modal/jobs', [User\ModalController::class, 'storeJob'])->name('user.modal.jobs.store');
+    Route::post('/modal/jobs/{id}/toggle', [User\ModalController::class, 'toggleJob'])->name('user.modal.jobs.toggle');
+    Route::delete('/modal/jobs/{id}', [User\ModalController::class, 'deleteJob'])->name('user.modal.jobs.delete');
+    Route::get('/modal/usage', [User\ModalController::class, 'usage'])->name('user.modal.usage');
+    Route::get('/modal/logs', [User\ModalController::class, 'logs'])->name('user.modal.logs');
+    Route::get('/modal/logs/{id}', [User\ModalController::class, 'logDetails'])->name('user.modal.logs.details');
+
+    // Hetzner Cloud (User server management)
+    Route::get('/hetzner', [User\HetznerController::class, 'index'])->name('user.hetzner.index');
+    Route::get('/hetzner/servers/{id}', [User\HetznerController::class, 'showServer'])->name('user.hetzner.servers.show');
+    Route::post('/hetzner/servers/{id}/power-on', [User\HetznerController::class, 'powerOn'])->name('user.hetzner.servers.power-on');
+    Route::post('/hetzner/servers/{id}/power-off', [User\HetznerController::class, 'powerOff'])->name('user.hetzner.servers.power-off');
+    Route::post('/hetzner/servers/{id}/reboot', [User\HetznerController::class, 'reboot'])->name('user.hetzner.servers.reboot');
+    Route::get('/hetzner/servers/{id}/metrics', [User\HetznerController::class, 'getMetrics'])->name('user.hetzner.servers.metrics');
+
+    // Volumes
+    Route::get('/hetzner/volumes', [User\HetznerController::class, 'volumes'])->name('user.hetzner.volumes');
+    Route::get('/hetzner/volumes/{id}', [User\HetznerController::class, 'showVolume'])->name('user.hetzner.volumes.show');
+
+    // Snapshots
+    Route::get('/hetzner/snapshots', [User\HetznerController::class, 'snapshots'])->name('user.hetzner.snapshots');
+    Route::post('/hetzner/servers/{id}/snapshots', [User\HetznerController::class, 'createSnapshot'])->name('user.hetzner.snapshots.create');
+    Route::delete('/hetzner/snapshots/{id}', [User\HetznerController::class, 'deleteSnapshot'])->name('user.hetzner.snapshots.delete');
+
+    // Usage
+    Route::get('/hetzner/usage', [User\HetznerController::class, 'usage'])->name('user.hetzner.usage');
 });
 
 // Redirect root to dashboard
