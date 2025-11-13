@@ -191,6 +191,20 @@ Route::middleware(['panel.detector', 'auth.user', 'two.factor'])->group(function
     Route::get('/ovh/billing', [User\OVHController::class, 'billing'])->name('user.ovh.billing');
     Route::get('/ovh/servers/{id}/stats', [User\OVHController::class, 'serverStats'])->name('user.ovh.server-stats');
     Route::get('/ovh/monitoring', [User\OVHController::class, 'monitoring'])->name('user.ovh.monitoring');
+
+    // GPU Server Access (NVIDIA GPU with Jupyter/ML frameworks)
+    Route::get('/gpu', [User\GPUController::class, 'index'])->name('user.gpu.index');
+    Route::get('/gpu/allocation/{id}', [User\GPUController::class, 'viewAllocation'])->name('user.gpu.allocation');
+    Route::get('/gpu/allocation/{id}/utilization', [User\GPUController::class, 'getUtilization'])->name('user.gpu.utilization');
+    Route::get('/gpu/jupyter', [User\GPUController::class, 'jupyter'])->name('user.gpu.jupyter');
+    Route::post('/gpu/jupyter/launch', [User\GPUController::class, 'launchJupyter'])->name('user.gpu.launch-jupyter');
+    Route::post('/gpu/container/{id}/stop', [User\GPUController::class, 'stopContainer'])->name('user.gpu.container.stop');
+    Route::post('/gpu/container/{id}/start', [User\GPUController::class, 'startContainer'])->name('user.gpu.container.start');
+    Route::post('/gpu/container/{id}/remove', [User\GPUController::class, 'removeContainer'])->name('user.gpu.container.remove');
+    Route::get('/gpu/container/{id}/logs', [User\GPUController::class, 'getContainerLogs'])->name('user.gpu.container.logs');
+    Route::get('/gpu/container/{id}/stats', [User\GPUController::class, 'getContainerStats'])->name('user.gpu.container.stats');
+    Route::post('/gpu/deploy', [User\GPUController::class, 'deployContainer'])->name('user.gpu.deploy');
+    Route::get('/gpu/environments', [User\GPUController::class, 'environments'])->name('user.gpu.environments');
 });
 
 // Redirect root to dashboard
