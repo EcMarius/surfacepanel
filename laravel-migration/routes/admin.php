@@ -201,6 +201,19 @@ Route::prefix('admin')->middleware(['panel.detector', 'auth.admin'])->group(func
     Route::post('gpu/frameworks', [Admin\GPUController::class, 'addFramework'])->name('admin.gpu.frameworks.add');
     Route::get('gpu/monitoring', [Admin\GPUController::class, 'monitoring'])->name('admin.gpu.monitoring');
     Route::get('gpu/monitoring/data', [Admin\GPUController::class, 'getMonitoringData'])->name('admin.gpu.monitoring.data');
+
+    // Modal.com Serverless Platform (System-wide management)
+    Route::get('modal', [Admin\ModalController::class, 'index'])->name('admin.modal.index');
+    Route::get('modal/config', [Admin\ModalController::class, 'config'])->name('admin.modal.config');
+    Route::post('modal/config', [Admin\ModalController::class, 'updateConfig'])->name('admin.modal.config.update');
+    Route::post('modal/test-connection', [Admin\ModalController::class, 'testConnection'])->name('admin.modal.test-connection');
+    Route::get('modal/functions', [Admin\ModalController::class, 'functions'])->name('admin.modal.functions');
+    Route::delete('modal/functions/{id}', [Admin\ModalController::class, 'deleteFunction'])->name('admin.modal.functions.delete');
+    Route::get('modal/jobs', [Admin\ModalController::class, 'jobs'])->name('admin.modal.jobs');
+    Route::get('modal/usage', [Admin\ModalController::class, 'usage'])->name('admin.modal.usage');
+    Route::post('modal/usage/sync', [Admin\ModalController::class, 'syncUsage'])->name('admin.modal.usage.sync');
+    Route::get('modal/logs', [Admin\ModalController::class, 'logs'])->name('admin.modal.logs');
+    Route::get('modal/statistics', [Admin\ModalController::class, 'statistics'])->name('admin.modal.statistics');
 });
 
 // Redirect /admin to dashboard
